@@ -211,7 +211,7 @@ function Settings() {
     message: '',
     severity: 'info'
   });
-  const [isLoading, setIsLoading] = useState(false);
+  const [isLoading, setIsLoading] = useState(true);
 
   // Add new state variables for the password reset dialog
   const [resetDialogOpen, setResetDialogOpen] = useState(false);
@@ -229,8 +229,8 @@ function Settings() {
 
   // Define fetchUserData outside useEffect so it can be called manually if needed
   const fetchUserData = async (force = false) => {
-    // Don't fetch if we've already loaded the data or are currently loading, unless forced
-    if ((initialDataLoaded.current && !force) || isLoading) return;
+    // Don't fetch if we've already loaded the data, unless forced
+    if (initialDataLoaded.current && !force) return;
     
     try {
       setIsLoading(true);
@@ -265,7 +265,6 @@ function Settings() {
       // Mark that we've loaded the initial data
       initialDataLoaded.current = true;
       
-      setIsLoading(false);
     } catch (error) {
       // Handle errors, but don't set initialDataLoaded to true on error
       console.error('Failed to fetch user data:', error);
@@ -274,6 +273,7 @@ function Settings() {
         message: 'Failed to load user information',
         severity: 'error'
       });
+    } finally {
       setIsLoading(false);
     }
   };
@@ -604,97 +604,115 @@ function Settings() {
             Profile
           </SettingsSectionTitle>
           
-          <ProfileSection>
-            <AvatarContainer>
-              <StyledAvatar 
-                src={avatarPreview} 
-                alt={userInfo.name || 'User'} 
-                onClick={handleAvatarClick}
-                sx={{ bgcolor: getAvatarColor(userInfo.name) }}
-              >
-                {!avatarPreview && getInitials(userInfo.name)}
-              </StyledAvatar>
+          {isLoading ? (
+            <Box sx={{ 
+              display: 'flex', 
+              flexDirection: 'column', 
+              alignItems: 'center', 
+              justifyContent: 'center',
+              minHeight: '200px',
+              textAlign: 'center',
+              padding: '40px 20px',
+              color: '#61759b' 
+            }}>
+              <CircularProgress sx={{ color: '#8A4EFC', mb: 2 }} />
+              <Typography variant="h6" sx={{ color: '#eee' }}>
+                Loading profile...
+              </Typography>
+            </Box>
+          ) : (
+            <ProfileSection>
+              <AvatarContainer>
+                <StyledAvatar 
+                  src={avatarPreview} 
+                  alt={userInfo.name || 'User'} 
+                  onClick={handleAvatarClick}
+                  sx={{ bgcolor: getAvatarColor(userInfo.name) }}
+                >
+                  {!avatarPreview && getInitials(userInfo.name)}
+                </StyledAvatar>
+                
+                {editMode && (
+                  <AvatarEditButton size="small" onClick={handleAvatarClick}>
+                    <PhotoCamera fontSize="small" />
+                  </AvatarEditButton>
+                )}
+                
+                <VisuallyHiddenInput
+                  type="file"
+                  accept="image/*"
+                  ref={fileInputRef}
+                  onChange={handleFileChange}
+                />
+              </AvatarContainer>
               
-              {editMode && (
-                <AvatarEditButton size="small" onClick={handleAvatarClick}>
-                  <PhotoCamera fontSize="small" />
-                </AvatarEditButton>
+              {!editMode ? (
+                <Box sx={{ textAlign: 'center', mb: 2 }}>
+                  <Typography variant="h6" sx={{ color: '#EEE', mb: 0.5 }}>
+                    {userInfo.name || 'User'}
+                  </Typography>
+                  <Typography variant="body2" sx={{ color: '#61759b', mb: 1 }}>
+                    {userInfo.email}
+                  </Typography>
+                  {userInfo.bio && (
+                    <Typography variant="body1" sx={{ color: '#A4B1CD', mt: 2, fontStyle: 'italic' }}>
+                      "{userInfo.bio}"
+                    </Typography>
+                  )}
+                </Box>
+              ) : (
+                <Box sx={{ width: '100%', maxWidth: 400 }}>
+                  <FormField
+                    label="Name"
+                    name="name"
+                    value={userInfo.name}
+                    onChange={handleUserInfoChange}
+                    fullWidth
+                    variant="outlined"
+                  />
+                  <FormField
+                    label="Bio"
+                    name="bio"
+                    value={userInfo.bio}
+                    onChange={handleUserInfoChange}
+                    fullWidth
+                    multiline
+                    rows={3}
+                    variant="outlined"
+                  />
+                </Box>
               )}
               
-              <VisuallyHiddenInput
-                type="file"
-                accept="image/*"
-                ref={fileInputRef}
-                onChange={handleFileChange}
-              />
-            </AvatarContainer>
-            
-            {!editMode ? (
-              <Box sx={{ textAlign: 'center', mb: 2 }}>
-                <Typography variant="h6" sx={{ color: '#EEE', mb: 0.5 }}>
-                  {userInfo.name || 'User'}
-                </Typography>
-                <Typography variant="body2" sx={{ color: '#61759b', mb: 1 }}>
-                  {userInfo.email}
-                </Typography>
-                {userInfo.bio && (
-                  <Typography variant="body1" sx={{ color: '#A4B1CD', mt: 2, fontStyle: 'italic' }}>
-                    "{userInfo.bio}"
-                  </Typography>
+              <Box sx={{ mt: 2, display: 'flex', gap: 2 }}>
+                {editMode ? (
+                  <>
+                    <Button 
+                      variant="outlined" 
+                      color="error" 
+                      startIcon={<Cancel />}
+                      onClick={cancelEdit}
+                    >
+                      Cancel
+                    </Button>
+                    <GradientButton 
+                      startIcon={<Save />}
+                      onClick={saveUserInfo}
+                      disabled={isLoading}
+                    >
+                      {isLoading ? <CircularProgress size={24} color="inherit" /> : 'Save Changes'}
+                    </GradientButton>
+                  </>
+                ) : (
+                  <GradientButton 
+                    startIcon={<Edit />}
+                    onClick={toggleEditMode}
+                  >
+                    Edit Profile
+                  </GradientButton>
                 )}
               </Box>
-            ) : (
-              <Box sx={{ width: '100%', maxWidth: 400 }}>
-                <FormField
-                  label="Name"
-                  name="name"
-                  value={userInfo.name}
-                  onChange={handleUserInfoChange}
-                  fullWidth
-                  variant="outlined"
-                />
-                <FormField
-                  label="Bio"
-                  name="bio"
-                  value={userInfo.bio}
-                  onChange={handleUserInfoChange}
-                  fullWidth
-                  multiline
-                  rows={3}
-                  variant="outlined"
-                />
-              </Box>
-            )}
-            
-            <Box sx={{ mt: 2, display: 'flex', gap: 2 }}>
-              {editMode ? (
-                <>
-                  <Button 
-                    variant="outlined" 
-                    color="error" 
-                    startIcon={<Cancel />}
-                    onClick={cancelEdit}
-                  >
-                    Cancel
-                  </Button>
-                  <GradientButton 
-                    startIcon={<Save />}
-                    onClick={saveUserInfo}
-                    disabled={isLoading}
-                  >
-                    {isLoading ? <CircularProgress size={24} color="inherit" /> : 'Save Changes'}
-                  </GradientButton>
-                </>
-              ) : (
-                <GradientButton 
-                  startIcon={<Edit />}
-                  onClick={toggleEditMode}
-                >
-                  Edit Profile
-                </GradientButton>
-              )}
-            </Box>
-          </ProfileSection>
+            </ProfileSection>
+          )}
         </StyledPaper>
         
         {/* Settings List */}
@@ -745,136 +763,20 @@ function Settings() {
             
             <ListItem button onClick={handleSignOut}>
               <ListItemIcon>
-                <Logout sx={{ color: '#D81E58' }} />
+                <Logout sx={{ color: '#8A4EFC' }} />
               </ListItemIcon>
               <ListItemText 
-                primary="Logout" 
-                secondary="Sign out of your account"
+                primary="Sign Out" 
                 primaryTypographyProps={{ sx: { color: '#EEE' } }}
-                secondaryTypographyProps={{ sx: { color: '#61759b' } }}
               />
             </ListItem>
           </List>
         </StyledPaper>
       </ScrollableContent>
-
-      {/* Creator Dialog */}
-      <Dialog
-        open={creatorDialogOpen}
-        onClose={handleCreatorDialogClose}
-        PaperProps={{
-          sx: { 
-            borderRadius: '16px',
-            backgroundColor: '#202B3E'
-          }
-        }}
-      >
-        <DialogTitle sx={{ color: '#EEE' }}>
-          Creator Platform Coming Soon
-        </DialogTitle>
-        <DialogContent>
-          <DialogContentText sx={{ color: '#A4B1CD' }}>
-            We're working hard to bring you our Creator Platform! Soon, you'll be able to create 
-            and share your own programs with others. The platform will let you customize programs, 
-            add activities, and track user subscriptions.
-            <br /><br />
-            Stay tuned for this exciting new feature!
-          </DialogContentText>
-        </DialogContent>
-        <DialogActions sx={{ padding: '16px' }}>
-          <Button 
-            onClick={handleCreatorDialogClose} 
-            sx={{ color: '#61759b' }}
-          >
-            Close
-          </Button>
-        </DialogActions>
-      </Dialog>
-
-      {/* Password Reset Dialog */}
-      <Dialog 
-        open={resetDialogOpen} 
-        onClose={handleResetDialogClose}
-        PaperProps={{
-          sx: { 
-            borderRadius: '16px',
-            backgroundColor: '#202B3E'
-          }
-        }}
-      >
-        <DialogTitle sx={{ color: '#EEE' }}>
-          Reset Password
-        </DialogTitle>
-        <DialogContent>
-          <DialogContentText sx={{ color: '#A4B1CD', mb: 2 }}>
-            Enter your email address below and we'll send you a link to reset your password.
-          </DialogContentText>
-          
-          <TextField
-            autoFocus
-            margin="dense"
-            label="Email Address"
-            type="email"
-            fullWidth
-            variant="outlined"
-            value={userInfo.email}
-            disabled={true}
-            sx={{
-              '.MuiOutlinedInput-root': {
-                backgroundColor: 'rgba(255, 255, 255, 0.05)',
-                borderRadius: '8px',
-              },
-              '.MuiOutlinedInput-notchedOutline': {
-                borderColor: 'rgba(255, 255, 255, 0.2)',
-              },
-              '.MuiInputLabel-root': {
-                color: 'rgba(255, 255, 255, 0.6)',
-              },
-              '.MuiInputBase-input': {
-                color: '#EEE'
-              }
-            }}
-          />
-
-          {/* reCAPTCHA */}
-          <RecaptchaContainer>
-            <ReCAPTCHA
-              ref={recaptchaRef}
-              sitekey={process.env.REACT_APP_RECAPTCHA_SITE_KEY || "YOUR_RECAPTCHA_SITE_KEY"}
-              onChange={handleRecaptchaChange}
-              onExpired={handleRecaptchaExpired}
-              theme="dark"
-            />
-          </RecaptchaContainer>
-        </DialogContent>
-        <DialogActions sx={{ padding: '16px' }}>
-          <Button 
-            onClick={handleResetDialogClose} 
-            sx={{ color: '#61759b' }}
-          >
-            Cancel
-          </Button>
-          <Button 
-            onClick={handleRequestPasswordReset}
-            disabled={isLoading || !recaptchaToken}
-            sx={{
-              background: 'linear-gradient(to right, #D81E58, #8A4EFC)',
-              color: 'white',
-              '&:hover': {
-                background: 'linear-gradient(to right, #8A4EFC, #D81E58)',
-              },
-              '&:disabled': {
-                background: 'rgba(255, 255, 255, 0.12)',
-                color: 'rgba(255, 255, 255, 0.3)'
-              }
-            }}
-          >
-            {isLoading ? <CircularProgress size={24} color="inherit" /> : 'Send Reset Link'}
-          </Button>
-        </DialogActions>
-      </Dialog>
-
-      {/* Feedback Snackbar */}
+      
+      <RouterBottomNavigation />
+      
+      {/* Snackbar for notifications */}
       <Snackbar
         open={snackbar.open}
         autoHideDuration={6000}
@@ -883,15 +785,71 @@ function Settings() {
       >
         <Alert 
           onClose={handleSnackbarClose} 
-          severity={snackbar.severity} 
-          variant="filled"
+          severity={snackbar.severity}
           sx={{ width: '100%' }}
         >
           {snackbar.message}
         </Alert>
       </Snackbar>
       
-      <RouterBottomNavigation />
+      {/* Password Reset Dialog */}
+      <Dialog
+        open={resetDialogOpen}
+        onClose={handleResetDialogClose}
+        aria-labelledby="reset-dialog-title"
+        aria-describedby="reset-dialog-description"
+      >
+        <DialogTitle id="reset-dialog-title">
+          Reset Password
+        </DialogTitle>
+        <DialogContent>
+          <DialogContentText id="reset-dialog-description">
+            Enter your email address to receive a password reset link.
+          </DialogContentText>
+          <RecaptchaContainer>
+            <ReCAPTCHA
+              ref={recaptchaRef}
+              sitekey={process.env.REACT_APP_RECAPTCHA_SITE_KEY}
+              onChange={handleRecaptchaChange}
+              onExpired={handleRecaptchaExpired}
+            />
+          </RecaptchaContainer>
+        </DialogContent>
+        <DialogActions>
+          <Button onClick={handleResetDialogClose} color="primary">
+            Cancel
+          </Button>
+          <Button 
+            onClick={handleRequestPasswordReset} 
+            color="primary" 
+            disabled={!recaptchaToken}
+          >
+            Send Reset Link
+          </Button>
+        </DialogActions>
+      </Dialog>
+      
+      {/* Creator Dialog */}
+      <Dialog
+        open={creatorDialogOpen}
+        onClose={handleCreatorDialogClose}
+        aria-labelledby="creator-dialog-title"
+        aria-describedby="creator-dialog-description"
+      >
+        <DialogTitle id="creator-dialog-title">
+          Creator Platform
+        </DialogTitle>
+        <DialogContent>
+          <DialogContentText id="creator-dialog-description">
+            The creator platform is coming soon! You'll be able to create and share your own programs with the community.
+          </DialogContentText>
+        </DialogContent>
+        <DialogActions>
+          <Button onClick={handleCreatorDialogClose} color="primary">
+            Close
+          </Button>
+        </DialogActions>
+      </Dialog>
     </PageContainer>
   );
 }

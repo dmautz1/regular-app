@@ -13,7 +13,8 @@ import {
   Tabs,
   Tab,
   Paper,
-  Fade
+  Fade,
+  CircularProgress
 } from '@mui/material';
 import { styled } from '@mui/system';
 import ProgramsCards from "./cards";
@@ -180,8 +181,10 @@ function Programs() {
   const [selectedProgram, setSelectedProgram] = useState();
   const [userSubscriptions, setUserSubscriptions] = useState([]);
   const [error, setError] = useState(null);
+  const [isLoading, setIsLoading] = useState(true);
 
   const GetUserSubscriptions = useCallback(() => {
+    setIsLoading(true);
     api.get('/programs/user')
       .then((data) => {
         setUserSubscriptions(Array.isArray(data) ? data : []);
@@ -189,11 +192,13 @@ function Programs() {
       .catch((err) => {
         console.log("Error: ", err);
         setUserSubscriptions([]);
-      });
+      })
+      .finally(() => setIsLoading(false));
   }, [api]);
 
   const GetFeedPrograms = useCallback(() => {
     setError(null);
+    setIsLoading(true);
     api.get('/programs/feed')
       .then((data) => {
         setFeedPrograms(Array.isArray(data) ? data : []);
@@ -202,7 +207,8 @@ function Programs() {
         console.log("Error: ", err);
         setError("An error occurred while loading programs.");
         setFeedPrograms([]);
-      });
+      })
+      .finally(() => setIsLoading(false));
   }, [api, setError]);
 
   useEffect(() => {
@@ -312,7 +318,23 @@ function Programs() {
 
       <TabPanel value={tabValue} index={0}>
         <ContentSection>
-          {userSubscriptions.length > 0 ? (
+          {isLoading ? (
+            <Box sx={{ 
+              display: 'flex', 
+              flexDirection: 'column', 
+              alignItems: 'center', 
+              justifyContent: 'center',
+              minHeight: '200px',
+              textAlign: 'center',
+              padding: '40px 20px',
+              color: '#61759b' 
+            }}>
+              <CircularProgress sx={{ color: '#8A4EFC', mb: 2 }} />
+              <Typography variant="h6" sx={{ color: '#eee' }}>
+                Loading your subscriptions...
+              </Typography>
+            </Box>
+          ) : userSubscriptions.length > 0 ? (
             <ScrollableContent>
               <ProgramsCards
                 programs={userSubscriptions}
@@ -414,15 +436,33 @@ function Programs() {
             </Grid>
           </FilterContainer>
 
-          <ScrollableContent>
-            <ProgramsCards
-              programs={sortedPrograms}
-              selectedProgram={selectedProgram}
-              handleSelectProgram={(id) => GetProgram(id)}
-              subscribeProgram={(id) => subscribeProgram(id)}
-              unsubscribeProgram={(id) => unsubscribeProgram(id)}
-            />
-          </ScrollableContent>
+          {isLoading ? (
+            <Box sx={{ 
+              display: 'flex', 
+              flexDirection: 'column', 
+              alignItems: 'center', 
+              justifyContent: 'center',
+              minHeight: '200px',
+              textAlign: 'center',
+              padding: '40px 20px',
+              color: '#61759b' 
+            }}>
+              <CircularProgress sx={{ color: '#8A4EFC', mb: 2 }} />
+              <Typography variant="h6" sx={{ color: '#eee' }}>
+                Loading programs...
+              </Typography>
+            </Box>
+          ) : (
+            <ScrollableContent>
+              <ProgramsCards
+                programs={sortedPrograms}
+                selectedProgram={selectedProgram}
+                handleSelectProgram={(id) => GetProgram(id)}
+                subscribeProgram={(id) => subscribeProgram(id)}
+                unsubscribeProgram={(id) => unsubscribeProgram(id)}
+              />
+            </ScrollableContent>
+          )}
         </ContentSection>
       </TabPanel>
             
