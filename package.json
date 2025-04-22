@@ -1,0 +1,85 @@
+{
+  "name": "regular",
+  "version": "0.1.0",
+  "private": true,
+  "dependencies": {
+    "@emotion/react": "^11.11.1",
+    "@emotion/styled": "^11.11.0",
+    "@fontsource/roboto": "^5.0.8",
+    "@fortawesome/fontawesome-svg-core": "^6.4.2",
+    "@fortawesome/free-solid-svg-icons": "^6.4.2",
+    "@fortawesome/react-fontawesome": "^0.2.0",
+    "@mui/icons-material": "^5.14.9",
+    "@mui/material": "^5.14.9",
+    "@react-navigation/bottom-tabs": "^6.5.8",
+    "@supabase/supabase-js": "^2.49.4",
+    "@testing-library/jest-dom": "^5.17.0",
+    "@testing-library/react": "^13.4.0",
+    "@testing-library/user-event": "^13.5.0",
+    "axios": "^1.5.0",
+    "baseui": "^13.0.0",
+    "canvas-confetti": "^1.9.3",
+    "cron-parser": "^4.9.0",
+    "cronstrue": "^2.41.0",
+    "formik": "^2.4.3",
+    "js-sha256": "^0.10.1",
+    "react": "^18.2.0",
+    "react-auth-kit": "^2.12.6",
+    "react-confetti": "^6.4.0",
+    "react-dom": "^18.2.0",
+    "react-dropzone": "^14.2.3",
+    "react-google-recaptcha": "^3.1.0",
+    "react-scripts": "5.0.1",
+    "styled-components": "^6.0.8",
+    "styletron-engine-atomic": "^1.5.0",
+    "styletron-react": "^6.1.0",
+    "web-vitals": "^2.1.4",
+    "yup": "^1.2.0"
+  },
+  "devDependencies": {
+    "env-cmd": "^10.1.0",
+    "jest-environment-jsdom": "^29.7.0",
+    "msw": "^2.2.0"
+  },
+  "scripts": {
+    "start": "env-cmd -f .env.development react-scripts start",
+    "build": "react-scripts build",
+    "build:production": "env-cmd -f .env.production react-scripts build",
+    "test": "react-scripts test",
+    "test:coverage": "react-scripts test --coverage --watchAll=false",
+    "eject": "react-scripts eject"
+  },
+  "eslintConfig": {
+    "extends": [
+      "react-app",
+      "react-app/jest"
+    ]
+  },
+  "browserslist": {
+    "production": [
+      ">0.2%",
+      "not dead",
+      "not op_mini all"
+    ],
+    "development": [
+      "last 1 chrome version",
+      "last 1 firefox version",
+      "last 1 safari version"
+    ]
+  },
+  "jest": {
+    "collectCoverageFrom": [
+      "src/**/*.{js,jsx}",
+      "!src/index.js",
+      "!src/reportWebVitals.js"
+    ],
+    "coverageThreshold": {
+      "global": {
+        "branches": 70,
+        "functions": 70,
+        "lines": 70,
+        "statements": 70
+      }
+    }
+  }
+}

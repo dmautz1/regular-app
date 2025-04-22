@@ -1,0 +1,371 @@
+:root {
+    --primary: #D81E58;
+    --secondary: #8A4EFC;
+    --light: #EEE;
+    --light-alt: #61759b;
+    --dark: #131A26;
+    --dark-alt: #202B3E;
+}
+
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+    font-family: 'Fira Sans', sans-serif;
+}
+
+body {
+    background-color: var(--dark-alt);
+    color: var(--light);
+}
+
+.App {
+    padding: 32px;
+}
+
+h1 {
+    font-size: 40px;
+    font-weight: 700;
+    margin-bottom: 32px;
+}
+
+h4 {
+    font-size: 18px;
+    color: var(--light-alt);
+    text-transform: uppercase;
+    font-weight: 400;
+    margin-bottom: 16px;
+}
+
+.item {
+    position: relative;
+    background-color: var(--dark);
+    padding: 16px;
+    border-radius: 16px;
+    display: flex;
+    align-items: center;
+    transition: 0.5s;
+    opacity: 0.99;
+}
+
+.item .checkbox {
+    width: 24px;
+    height: 24px;
+    margin-right: 16px;
+    transition: 0.4s;
+    cursor: pointer;
+}
+
+.item.is-complete .checkbox {
+    color: var(--light-alt);
+}
+
+.item .title {
+    font-size: 20px;
+    margin-left: 16px;
+    
+}
+
+.item.is-complete .title {
+    text-decoration: line-through;
+    color: var(--light-alt);
+}
+
+.item .delete-item {
+    position: absolute;
+    top: 50%;
+    right: 16px;
+    transform: translateY(-50%);
+    width: 24px;
+    height: 24px;
+    color: #AF1E3D;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+}
+
+.addPopup {
+    position: absolute;
+    right: 32px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 64px;
+    height: 64px;
+    border-radius: 999px;
+    font-size: 28px;
+    font-weight: 900;
+    color: var(--light);
+    background-color: var(--secondary);
+    cursor: pointer;
+    margin-top: 15px;
+}
+
+.popup {
+    display: none;
+    position: fixed;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    width: 100%;
+    max-width: 400px;
+    background-color: var(--light);
+    padding: 32px;
+    border-radius: 16px;
+    box-shadow: 0 3px 24px var(--dark);
+}
+
+.popup.active {
+    display: block;
+}
+
+.closePopup {
+    position: absolute;
+    top: 16px;
+    right: 16px;
+    width: 24px;
+    height: 24px;
+    font-size: 20px;
+    font-weight: 900;
+    color: var(--light);
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background-color: var(--primary);
+    border-radius: 50%;
+}
+
+.popup h3 {
+    color: var(--dark);
+    font-weight: 400;
+    margin-bottom: 16px;
+    text-transform: uppercase;
+}
+
+.add-item-input {
+    appearance: none;
+    outline: none;
+    border: none;
+    background-color: #FFF;
+    padding: 16px;
+    border-radius: 8px;
+    box-shadow: 0 2px 24px rgba(0, 0, 0, 0.2);
+    width: 100%;
+    font-size: 16px;
+}
+
+.button {
+    padding: 16px 32px;
+    border-radius: 99px;
+    background-image: linear-gradient(to right, var(--primary), var(--secondary));
+    display: inline-block;
+    font-weight: 700;
+    text-transform: uppercase;
+    font-size: 18px;
+    margin-top: 16px;
+    text-align: center;
+    cursor: pointer;
+}
+
+.filterSortOptions {
+    margin-bottom: 16px;
+}
+
+.programCard {
+    padding: 16px;
+    border: '1px solid #ccc';
+    border-radius: 8px;
+    margin-bottom: 16px;
+}
+
+/* CHECKBOX */
+*, *::before, *::after {
+    box-sizing: border-box;
+    margin: 0;
+    padding: 0;
+    --bkg-light: 60 100% 99.8%;
+    --accent1-light: 230 57.8% 82.4%;
+    --accent2-light: 351 60% 83.3%;
+    
+    --bkg-dark: 230 33.3% 20.6%;
+    --accent1-dark: 230 47.8% 62.4%;
+    --accent2-dark: 351 50% 63.3%;
+  }
+  
+  :root {
+    --bkg: var(--bkg-light);
+    --accent1: var(--accent1-light);
+    --accent2: var(--accent2-light);
+  }
+  
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --bkg: var(--bkg-dark);
+      --accent1: var(--accent1-dark);
+      --accent2: var(--accent2-dark);
+    }
+  }
+    
+  .item button {
+    width: 24px;
+    height: 24px;
+    /*background-color: hsl(var(--bkg));*/
+    cursor: pointer;
+    border: none;
+    border-radius: .25rem;
+    position: relative;
+    box-shadow: none;
+    transition: background-color 400ms ease-in-out, box-shadow 400ms ease-in-out;
+  }
+  
+  .item button.checked {
+    background-color: transparent;
+    box-shadow: none;
+  }
+  
+  /* Styles for disabled checkbox */
+  .item button.disabled {
+    cursor: not-allowed;
+    opacity: 0.6;
+  }
+  
+  .item button.disabled::after {
+    background: linear-gradient(321deg, #a0a0a0, #c0c0c0);
+    opacity: 0.7;
+  }
+  
+  .item button::after {
+    content: '';
+    position: absolute;
+    background: linear-gradient(321deg, hsl(var(--accent1)), hsl(var(--accent2)) );
+    inset: -3px;
+    z-index: -1;
+    border-radius: .4rem;
+  }
+  
+  .checkmark {
+    stroke: hsl(var(--bkg));
+    stroke-dasharray: 19.79899024963379;
+    stroke-dashoffset: 19.79899024963379;
+  }
+  
+  .checked .checkmark {
+    animation: check 350ms cubic-bezier(0.83, 0.05, 0.62, 1.0) forwards;
+  }
+  
+  @keyframes check {
+    to {
+      stroke-dashoffset: 0;
+    }
+  }
+  
+  circle {
+    fill: hsl( var(--accent1));
+  }
+  
+  .alternate {
+    fill: hsl( var(--accent2));
+  }
+  
+  .explosion {
+    transition: transform .3s cubic-bezier(0,.81,.56,1);
+    position: absolute;
+    inset: -.25rem;
+    opacity: 0;
+  }
+  
+  .checked .explosion-lg.exploding {
+    animation: explodeLg .8s ease-in-out .1s;
+  }
+  
+  .checked .explosion-sm.exploding  {
+    animation: explodeSm .64s ease-out .2s;
+  }
+  
+   @keyframes explodeSm {
+      0% {
+          opacity: 0;
+          transform: scale(.01) rotate(-4deg)
+      }
+  
+      30%,60% {
+        opacity: .16;
+      }
+  
+      60% {
+        transform: scale(1.6) rotate(-10deg);
+      }
+      80% {
+        opacity: 0;
+      }
+  }
+  
+   @keyframes explodeLg {
+      0% {
+          opacity: 0;
+          transform: scale(.01) rotate(5deg);
+      }
+  
+      20%,60% {
+        opacity: 1;
+      }
+  
+      40% {
+        transform: scale(2) rotate(10deg);
+      }
+  
+      80% {
+        opacity: 0;
+      }
+  }
+
+/* New animations for celebration overlay */
+@keyframes bounce {
+  0%, 100% {
+    transform: translateY(0);
+  }
+  50% {
+    transform: translateY(-15px);
+  }
+}
+
+@keyframes pulse {
+  0% {
+    box-shadow: 0 0 0 0 rgba(138, 78, 252, 0.7);
+  }
+  70% {
+    box-shadow: 0 0 0 15px rgba(138, 78, 252, 0);
+  }
+  100% {
+    box-shadow: 0 0 0 0 rgba(138, 78, 252, 0);
+  }
+}
+
+/* Remove outline from delete buttons */
+button.MuiIconButton-root:focus-visible {
+  outline: none !important;
+}
+
+.MuiIconButton-root[type="button"] {
+  outline: none !important;
+  box-shadow: none !important;
+}
+
+.item .MuiIconButton-root {
+  outline: none !important;
+  box-shadow: none !important;
+  border: none !important;
+}
+
+/* Keep the checkbox styling */
+.item button:not(.MuiIconButton-root) {
+  /* Preserve existing button styles for checkboxes */
+}
+
+/* Remove the global container padding rule since we're handling container scrolling individually */
+/* .MuiContainer-root {
+  padding-bottom: 104px !important;
+} */
