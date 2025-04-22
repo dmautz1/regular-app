@@ -176,7 +176,7 @@ function Login() {
     <PageContainer maxWidth="lg">
       <LoginContainer>
         <Typography variant="h4" component="h1" color="#EEE" align="center" fontWeight="600">
-          Sign in to 0to100
+          Sign in to Regular
         </Typography>
         
         {sessionExpired && (
@@ -203,11 +203,7 @@ function Login() {
           </Alert>
         )}
         
-        <Box component="form" onSubmit={formik.handleSubmit}>
-          <Typography color="#A4B1CD" paragraph>
-            Welcome back
-          </Typography>
-          
+        <Box component="form" onSubmit={formik.handleSubmit}>          
           <FormField
             label="Email Address"
             name="email"

@@ -4,7 +4,7 @@ import { useNavigate } from 'react-router-dom';
 import { useRateLimit } from './RateLimitContext';
 
 // Base API URL
-const API_BASE_URL = 'http://localhost:3001';
+const API_BASE_URL = process.env.REACT_APP_API_URL || 'http://localhost:3001';
 
 /**
  * Custom hook that provides an API client with authentication and error handling
