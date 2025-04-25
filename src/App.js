@@ -54,7 +54,7 @@ function App() {
             </PublicRoute>
           } />
           
-          <Route path="/register" element={
+          <Route path="/signup" element={
             <PublicRoute>
               <Register />
             </PublicRoute>

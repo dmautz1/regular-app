@@ -268,7 +268,7 @@ function Login() {
               Don't have an account?
             </Typography>
             <TextButton 
-              onClick={() => navigate("/register")}
+              onClick={() => navigate("/signup")}
               variant="outlined"
               sx={{
                 borderColor: 'rgba(138, 78, 252, 0.3)',
