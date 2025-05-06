@@ -1,5 +1,6 @@
 import * as React from 'react';
 import { useState, useEffect } from "react";
+import { Grid } from '@mui/material';
 import { useAuthHeader, useAuthUser } from 'react-auth-kit'
 import { 
   Typography, 
@@ -48,7 +49,7 @@ const StyledDialog = styled(Dialog)(({ theme }) => ({
 
 const DialogHeader = styled(Box)(({ theme }) => ({
   position: 'relative',
-  height: '280px',
+  height: '240px',
   display: 'flex',
   flexDirection: 'column',
   justifyContent: 'flex-end',
@@ -194,7 +195,6 @@ const ActionButton = styled(Button)(({ theme, variant }) => ({
 const ScheduleContainer = styled(Paper)(({ theme }) => ({
   backgroundColor: '#202B3E',
   borderRadius: '12px',
-  marginTop: '16px',
   marginBottom: '8px',
   overflow: 'visible' // Ensure content overflow is visible
 }));
@@ -485,14 +485,6 @@ export default function ProgramDialog({ selectedProgram, isDialogOpened, handleC
             {selectedProgram.title}
           </Typography>
           
-          <Box sx={{ display: 'flex', alignItems: 'center', mt: 1, mb: 1 }}>
-            <SubscribersChip 
-              icon={<PeopleIcon />}
-              label={`${selectedProgram.subscriberCount || 0} subscribers`}
-              size="medium"
-            />
-          </Box>
-          
           <Box sx={{ display: 'flex', alignItems: 'center' }}>
             <AvatarStyled 
               src={getAvatarInfo(selectedProgram.creator).src}
@@ -520,8 +512,8 @@ export default function ProgramDialog({ selectedProgram, isDialogOpened, handleC
           variant="fullWidth"
           aria-label="program information tabs"
         >
-          <Tab icon={<InfoIcon sx={{ mr: 1, fontSize: '1.2rem' }} />} label="About" iconPosition="start" />
-          <Tab icon={<CalendarMonthIcon sx={{ mr: 1, fontSize: '1.2rem' }} />} label="Schedule" iconPosition="start" />
+          <Tab sx={{ minHeight: '32px' }} icon={<InfoIcon sx={{ mr: 1 }} />} label="About" iconPosition="start" />
+          <Tab sx={{ minHeight: '32px' }} icon={<CalendarMonthIcon sx={{ mr: 1 }} />} label="Schedule" iconPosition="start" />
         </StyledTabs>
       </TabContainer>
 
@@ -533,14 +525,23 @@ export default function ProgramDialog({ selectedProgram, isDialogOpened, handleC
               <AboutTabPlaceholder />
             ) : (
               <>
-                <Box sx={{ mb: 3 }}>
-                  <CategoryChip 
-                    icon={<CategoryIcon />} 
-                    label={selectedProgram.category || 'General'} 
-                    size="medium" 
-                  />
+                <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', mb: 1 }}>
+                  <Box sx={{ display: 'flex', alignItems: 'center', mt: 1, mb: 1 }}>
+                    <SubscribersChip 
+                      icon={<PeopleIcon />}
+                      label={`${selectedProgram.subscriberCount || 0} subscribers`}
+                      size="medium"
+                    />
+                  </Box>
+                  <Box sx={{ display: 'flex', alignItems: 'center', mt: 1, mb: 1 }}>
+                    <CategoryChip 
+                      icon={<CategoryIcon />} 
+                      label={selectedProgram.category || 'General'} 
+                      size="medium" 
+                      sx={{ marginLeft: '8px' }}
+                    />
+                  </Box>
                 </Box>
-                
                 <Typography variant="body1" sx={{ color: '#EEE', mb: 3, lineHeight: 1.6 }}>
                         {selectedProgram.description}
                     </Typography>
@@ -577,12 +578,7 @@ export default function ProgramDialog({ selectedProgram, isDialogOpened, handleC
           <TabPanel id="schedule-tab-panel" $isLoading={isTabLoading || tabTransitioning}>
             {isTabLoading ? (
               <ScheduleTabPlaceholder />
-            ) : (
-              <>
-                <Typography variant="body2" paragraph sx={{ color: '#A4B1CD', mb: 2 }}>
-                  This program includes activities scheduled throughout the week. Select a day to view its activities.
-                </Typography>
-                
+            ) : (             
                 <ScheduleContainer elevation={0}>
                   <WeekdayGridContainer>
                     {weekdays.map((day, index) => (
@@ -609,13 +605,6 @@ export default function ProgramDialog({ selectedProgram, isDialogOpened, handleC
                   </WeekdayGridContainer>
                   
                   <Box sx={{ p: 2, bgcolor: '#202B3E' }}>
-                    <Box sx={{ display: 'flex', alignItems: 'center', mb: 2 }}>
-                      <ScheduleIcon sx={{ color: '#8A4EFC', mr: 1, fontSize: '1.1rem' }} />
-                      <Typography variant="subtitle1" sx={{ color: 'white', fontWeight: 500 }}>
-                        {weekdays[activeDay]}'s Schedule
-                      </Typography>
-                    </Box>
-                    
                     {getActivities(activeDay).length === 0 ? (
                       <EmptyDay>
                         <Typography variant="body1" sx={{ color: '#EEE', mb: 1 }}>
@@ -665,7 +654,6 @@ export default function ProgramDialog({ selectedProgram, isDialogOpened, handleC
                     )}
                   </Box>
                 </ScheduleContainer>
-              </>
             )}
           </TabPanel>
         </Fade>
@@ -673,9 +661,11 @@ export default function ProgramDialog({ selectedProgram, isDialogOpened, handleC
       
       <StyledDialogActions>
         {selectedProgram.isSubscribed ? (
-          <ActionButton variant="outlined" onClick={() => handleUnsubscribe(selectedProgram.id)} startIcon={<RemoveDoneIcon />}>
-            Unsubscribe from Program
-          </ActionButton>
+          !selectedProgram.is_personal && (
+            <ActionButton variant="outlined" onClick={() => handleUnsubscribe(selectedProgram.id)} startIcon={<RemoveDoneIcon />}>
+              Unsubscribe from Program
+            </ActionButton>
+          )
         ) : (
           <ActionButton variant="contained" onClick={() => handleSubscribe(selectedProgram.id)} startIcon={<DoneAllIcon />}>
             Subscribe to Program

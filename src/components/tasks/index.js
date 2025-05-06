@@ -24,7 +24,11 @@ import {
   Divider,
   Snackbar,
   Alert,
-  CircularProgress
+  CircularProgress,
+  Menu,
+  MenuItem,
+  ListItemIcon,
+  ListItemText
 } from '@mui/material';
 import { styled } from '@mui/system';
 import ChevronLeftIcon from '@mui/icons-material/ChevronLeft';
@@ -33,7 +37,13 @@ import CancelIcon from '@mui/icons-material/Cancel';
 import AddIcon from '@mui/icons-material/Add';
 import CalendarTodayIcon from '@mui/icons-material/CalendarToday';
 import EventBusyIcon from '@mui/icons-material/EventBusy';
+import InfoIcon from '@mui/icons-material/Info';
+import PushPinIcon from '@mui/icons-material/PushPin';
+import MoreVertIcon from '@mui/icons-material/MoreVert';
+import EditIcon from '@mui/icons-material/Edit';
+import DeleteIcon from '@mui/icons-material/Delete';
 import CelebrationOverlay from "./CelebrationOverlay";
+import TaskForm from './TaskForm';
 
 // Styled components
 const PageContainer = styled(Container)(({ theme }) => ({
@@ -142,6 +152,7 @@ const EmptyState = styled(Box)(({ theme }) => ({
 
 function Dashboard() {
   const authUser = useAuthUser();
+  console.log(authUser());
   const api = useApi();
   
   const [day, setDay] = useState(new Date().toLocaleDateString().replace(/\//g, '-'));
@@ -153,6 +164,7 @@ function Dashboard() {
   const [taskToDelete, setTaskToDelete] = useState(null);
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
   const [isRecurring, setIsRecurring] = useState(false);
+  const [isSticky, setIsSticky] = useState(false);
   const [recurringDays, setRecurringDays] = useState({
     0: false, // Sunday
     1: false, // Monday
@@ -168,6 +180,27 @@ function Dashboard() {
     severity: 'success' // 'success', 'error', 'warning', 'info'
   });
   const [isLoading, setIsLoading] = useState(false);
+  const [anchorEl, setAnchorEl] = useState(null);
+  const [selectedTask, setSelectedTask] = useState(null);
+  const [editDialogOpen, setEditDialogOpen] = useState(false);
+  const [editTask, setEditTask] = useState({
+    title: '',
+    description: '',
+    dueDate: '',
+    isSticky: false,
+    isRecurring: false,
+    recurringDays: {
+      0: false, // Sunday
+      1: false, // Monday
+      2: false, // Tuesday
+      3: false, // Wednesday
+      4: false, // Thursday
+      5: false, // Friday
+      6: false  // Saturday
+    }
+  });
+  const [isProgramTask, setIsProgramTask] = useState(false);
+  const [addDialogOpen, setAddDialogOpen] = useState(false);
   
 
   // Check if celebration has already happened for this day and user in this session
@@ -183,14 +216,9 @@ function Dashboard() {
     populateTasks();
   }, [day]);
 
-  // Check if all tasks are completed
   useEffect(() => {
-    // Only show celebration if:
-    // 1. There are tasks
-    // 2. All tasks are complete
-    // 3. We haven't already celebrated today in this session
-    // 4. We're not already showing the celebration
-    if (tasks.length > 0 && 
+    if (!isLoading && 
+        tasks.length > 0 && 
         tasks.every(task => task.is_completed) && 
         !hasCelebratedToday && 
         !showCelebration) {
@@ -206,7 +234,7 @@ function Dashboard() {
       
       return () => clearTimeout(timer);
     }
-  }, [tasks, showCelebration, hasCelebratedToday, day, authUser]);
+  }, [tasks, showCelebration, hasCelebratedToday, day, authUser, isLoading]);
 
   const changeDay = (offset) => {
     const newDate = new Date(day);
@@ -270,18 +298,7 @@ function Dashboard() {
   };
 
   const completeTask = async (id) => {
-    // Find the task to check its date
     const taskToComplete = tasks.find(task => task.id === id);
-    
-    // Get today's date at midnight for comparison
-    const today = new Date();
-    today.setHours(0, 0, 0, 0);
-    const todayString = today.toISOString().split('T')[0];
-    
-    // If task is in the future, don't allow completion
-    if (taskToComplete.due_date > todayString) {
-      return;
-    }
     
     try {
       const data = await api.patch(`/tasks/${id}/complete`);
@@ -306,12 +323,10 @@ function Dashboard() {
     try {
       await api.delete(`/tasks/${id}/delete`);
       
-      // Whether the task was soft-deleted or hard-deleted, we remove it from the UI
-    setTasks(tasks => tasks.filter(task => task.id !== id));
+      setTasks(tasks => tasks.filter(task => task.id !== id));
       setShowDeleteConfirm(false);
       setTaskToDelete(null);
       
-      // Add success notification
       setSnackbar({
         open: true,
         message: "Task deleted successfully",
@@ -320,7 +335,6 @@ function Dashboard() {
     } catch (err) {
       console.error("Error deleting task:", err);
       
-      // Add error notification
       setSnackbar({
         open: true,
         message: `Error deleting task: ${err.message}`,
@@ -329,9 +343,18 @@ function Dashboard() {
     }
   };
 
-  const addTask = async () => {
+  const handleEditClick = () => {
+    if (selectedTask) {
+      const isProgram = selectedTask.activity_id && selectedTask.program_id;
+      setIsProgramTask(isProgram);
+      setEditDialogOpen(true);
+      setAnchorEl(null); // Only clear the anchor element, not the selected task
+    }
+  };
+
+  const handleAddTask = async (taskData) => {
     try {
-      if (!newTask.trim()) {
+      if (!taskData.title.trim()) {
         setSnackbar({
           open: true,
           message: "Task title cannot be empty",
@@ -340,9 +363,18 @@ function Dashboard() {
         return;
       }
 
-      if (isRecurring) {
+      if (taskData.isRecurring && taskData.isSticky) {
+        setSnackbar({
+          open: true,
+          message: "A task cannot be both recurring and sticky",
+          severity: "error"
+        });
+        return;
+      }
+
+      if (taskData.isRecurring) {
         // Handle recurring task creation
-        const selectedDays = Object.entries(recurringDays)
+        const selectedDays = Object.entries(taskData.recurringDays)
           .filter(([_, isSelected]) => isSelected)
           .map(([day]) => parseInt(day));
 
@@ -356,7 +388,7 @@ function Dashboard() {
         }
 
         await api.post("/tasks/new", {
-          title: newTask,
+          title: taskData.title,
           dueDate: day,
           isRecurring: true,
           recurringDays: selectedDays
@@ -369,11 +401,11 @@ function Dashboard() {
         });
       } else {
         // Handle regular non-recurring task
-        console.log(`Creating regular task "${newTask}" for date: ${day}`);
-        
         await api.post("/tasks/new", {
-          title: newTask,
-          dueDate: day
+          title: taskData.title,
+          description: taskData.description,
+          dueDate: day,
+          isSticky: taskData.isSticky
         });
         
         setSnackbar({
@@ -383,14 +415,7 @@ function Dashboard() {
         });
       }
       
-      setPopupActive(false);
-      setNewTask("");
-      setIsRecurring(false);
-      setRecurringDays({
-        0: false, 1: false, 2: false, 3: false, 4: false, 5: false, 6: false
-      });
-
-      // After creating the task, populate tasks for the day
+      setAddDialogOpen(false);
       await populateTasks();
     } catch (err) {
       console.error("Error adding task:", err);
@@ -402,38 +427,90 @@ function Dashboard() {
     }
   };
 
-  // Helper function to handle recurring day selection
-  const handleRecurringDayChange = (day) => {
-    setRecurringDays({
-      ...recurringDays,
-      [day]: !recurringDays[day]
-    });
+  const handleEditTask = async (taskData) => {
+    try {
+      if (!selectedTask) return;
+
+      const updateData = {
+        title: taskData.title,
+        description: taskData.description,
+        dueDate: taskData.dueDate,
+        isSticky: taskData.isSticky
+      };
+
+      // If editing recurrence, include the recurrence data
+      if (taskData.isEditingRecurrence) {
+        updateData.isEditingRecurrence = true;
+        updateData.recurringDays = taskData.recurringDays;
+      }
+
+      const updatedTask = await api.patch(`/tasks/${selectedTask.id}/update`, updateData);
+      
+      setTasks(tasks => tasks.map(task => {
+        if (task.id === selectedTask.id) {
+          return {
+            ...task,
+            ...updatedTask
+          };
+        }
+        return task;
+      }));
+
+      setEditDialogOpen(false);
+      setSelectedTask(null);
+
+      // Repopulate tasks for the current day to ensure the list is up to date
+      await populateTasks();
+      
+      setSnackbar({
+        open: true,
+        message: taskData.isEditingRecurrence ? 
+          "Task and all future recurring instances updated successfully" : 
+          "Task updated successfully",
+        severity: "success"
+      });
+    } catch (err) {
+      console.error("Error updating task:", err);
+      setSnackbar({
+        open: true,
+        message: `Error updating task: ${err.message}`,
+        severity: "error"
+      });
+    }
   };
 
   const handleDismissCelebration = () => {
     setShowCelebration(false);
-    // We already have hasCelebratedToday as true and stored in sessionStorage
-    // so it won't show again for this day during this session
   };
 
-  // Handler for initiating task deletion
-  const handleDeleteClick = (taskId) => {
-    setTaskToDelete(taskId);
-    setShowDeleteConfirm(true);
+  const handleDeleteClick = () => {
+    if (selectedTask) {
+      setTaskToDelete(selectedTask.id);
+      setShowDeleteConfirm(true);
+    }
+    handleMenuClose();
   };
 
-  // Handler for canceling task deletion
   const handleCancelDelete = () => {
     setShowDeleteConfirm(false);
     setTaskToDelete(null);
   };
 
-  // Handle snackbar close
   const handleSnackbarClose = (event, reason) => {
     if (reason === 'clickaway') {
       return;
     }
     setSnackbar({ ...snackbar, open: false });
+  };
+
+  const handleMenuClick = (event, task) => {
+    setAnchorEl(event.currentTarget);
+    setSelectedTask(task);
+    console.log(selectedTask);
+  };
+
+  const handleMenuClose = () => {
+    setAnchorEl(null);
   };
 
   return (
@@ -480,14 +557,13 @@ function Dashboard() {
                     key={task.id}
                   >
                     <TaskItem completed={task.is_completed}>
-                      {/* Restore the original 'item' class that's needed for the checkbox animation to work */}
                       <div className={`item ${task.is_completed ? "is-complete" : ""}`} 
                         style={{ 
                           display: 'flex', 
                           alignItems: 'center', 
                           padding: '16px',
                           width: '100%',
-                          margin: 0 // Add this to override the margin from the .item class
+                          margin: 0
                         }}
                       >
                         {/* Determine if task is in the future */}
@@ -515,51 +591,23 @@ function Dashboard() {
                             />
                           );
                         })()}
-                        <TaskTitle 
-                          completed={task.is_completed}
-                          sx={{
-                            opacity: (() => {
-                              const today = new Date();
-                              today.setHours(0, 0, 0, 0);
-                              const todayString = today.toISOString().split('T')[0];
-                              return task.due_date > todayString ? 0.7 : 1;
-                            })()
-                          }}
-                        >
-                          {task.title}
-                        </TaskTitle>
+                        
+                        <Box sx={{ flexGrow: 1, display: 'flex', alignItems: 'center' }}>
+                          <TaskTitle completed={task.is_completed}>
+                            {task.title}
+                          </TaskTitle>
+                          {task.is_sticky && (
+                            <Tooltip title="This is a sticky task - it will continue day to day until it is completed." arrow placement="top">
+                              <PushPinIcon sx={{ ml: 1, fontSize: '1rem', color: 'text.secondary' }} />
+                            </Tooltip>
+                          )}
+                        </Box>
+                        
                         <IconButton 
-                          size="small" 
-                          onClick={() => handleDeleteClick(task.id)}
-                          sx={{ 
-                            color: '#AF1E3D',
-                            outline: 'none',
-                            border: 'none',
-                            boxShadow: 'none',
-                            '&:focus': {
-                              outline: 'none !important',
-                              boxShadow: 'none !important',
-                              border: 'none !important'
-                            },
-                            '&:hover': {
-                              outline: 'none',
-                              boxShadow: 'none'
-                            },
-                            '&::after': {
-                              display: 'none'
-                            },
-                            '&.MuiButtonBase-root': {
-                              outline: 'none'
-                            },
-                            '& .MuiTouchRipple-root': {
-                              display: 'none'
-                            }
-                          }}
-                          disableRipple={true}
-                          disableFocusRipple={true}
-                          disableTouchRipple={true}
+                          onClick={(e) => handleMenuClick(e, task)}
+                          sx={{ color: 'text.secondary' }}
                         >
-                          <CancelIcon />
+                          <MoreVertIcon />
                         </IconButton>
                       </div>
                     </TaskItem>
@@ -581,118 +629,30 @@ function Dashboard() {
         </TaskContentSection>
       </TaskContainer>
 
-      <AddButton color="primary" onClick={() => setPopupActive(true)}>
+      <AddButton color="primary" onClick={() => setAddDialogOpen(true)}>
         <AddIcon />
       </AddButton>
 
-      <Dialog 
-        open={popupActive} 
-        onClose={() => setPopupActive(false)}
-        PaperProps={{
-          sx: { 
-            borderRadius: '16px',
-            backgroundColor: '#EEE'
-          }
+      {/* Add Task Form */}
+      <TaskForm
+        open={addDialogOpen}
+        onClose={() => setAddDialogOpen(false)}
+        onSubmit={handleAddTask}
+        mode="add"
+      />
+
+      {/* Edit Task Form */}
+      <TaskForm
+        open={editDialogOpen}
+        onClose={() => {
+          setEditDialogOpen(false);
+          setSelectedTask(null);
         }}
-      >
-        <DialogTitle sx={{ 
-          fontWeight: 'medium', 
-          textTransform: 'uppercase', 
-          color: '#131A26',
-          textAlign: 'center'
-        }}>
-          Add New Task
-        </DialogTitle>
-        
-        <DialogContent>
-          <TextField
-            autoFocus
-            margin="dense"
-            label="Task Name"
-            type="text" 
-            fullWidth
-            variant="outlined"
-            value={newTask}
-            onChange={(e) => setNewTask(e.target.value)} 
-            sx={{ mt: 1 }}
-          />
-          
-          <FormControlLabel
-            control={
-              <MuiCheckbox
-                checked={isRecurring}
-                onChange={() => setIsRecurring(!isRecurring)}
-                color="primary"
-              />
-            }
-            label="This is a recurring task"
-            sx={{ mt: 2 }}
-          />
-          
-          {isRecurring && (
-            <Box sx={{ mt: 2 }}>
-              <Divider sx={{ my: 1 }} />
-              <FormLabel component="legend" sx={{ mb: 1 }}>Repeat on:</FormLabel>
-              <FormGroup row>
-                <FormControlLabel
-                  control={<MuiCheckbox checked={recurringDays[0]} onChange={() => handleRecurringDayChange(0)} />}
-                  label="Sun"
-                />
-                <FormControlLabel
-                  control={<MuiCheckbox checked={recurringDays[1]} onChange={() => handleRecurringDayChange(1)} />}
-                  label="Mon"
-                />
-                <FormControlLabel
-                  control={<MuiCheckbox checked={recurringDays[2]} onChange={() => handleRecurringDayChange(2)} />}
-                  label="Tue"
-                />
-                <FormControlLabel
-                  control={<MuiCheckbox checked={recurringDays[3]} onChange={() => handleRecurringDayChange(3)} />}
-                  label="Wed"
-                />
-                <FormControlLabel
-                  control={<MuiCheckbox checked={recurringDays[4]} onChange={() => handleRecurringDayChange(4)} />}
-                  label="Thu"
-                />
-                <FormControlLabel
-                  control={<MuiCheckbox checked={recurringDays[5]} onChange={() => handleRecurringDayChange(5)} />}
-                  label="Fri"
-                />
-                <FormControlLabel
-                  control={<MuiCheckbox checked={recurringDays[6]} onChange={() => handleRecurringDayChange(6)} />}
-                  label="Sat"
-                />
-              </FormGroup>
-            </Box>
-          )}
-        </DialogContent>
-        
-        <DialogActions sx={{ pb: 3, px: 3, justifyContent: 'center' }}>
-          <Button 
-            onClick={() => setPopupActive(false)} 
-            color="primary"
-            variant="outlined"
-            sx={{ borderRadius: '20px', px: 3 }}
-          >
-            Cancel
-          </Button>
-          <Button 
-            onClick={addTask}
-            variant="contained"
-            disabled={isRecurring && !Object.values(recurringDays).some(v => v)}
-            sx={{ 
-              borderRadius: '20px', 
-              px: 3,
-              background: 'linear-gradient(to right, #D81E58, #8A4EFC)',
-              '&:hover': {
-                background: 'linear-gradient(to right, #8A4EFC, #D81E58)',
-              }
-            }}
-          >
-            Create Task
-          </Button>
-        </DialogActions>
-      </Dialog>
+        onSubmit={handleEditTask}
+        mode="edit"
+        initialTask={selectedTask}
+        isProgramTask={isProgramTask}
+      />
 
       {/* Delete Confirmation Dialog */}
       <Dialog
@@ -762,6 +722,41 @@ function Dashboard() {
           {snackbar.message}
         </Alert>
       </Snackbar>
+
+      {/* Task Menu */}
+      <Menu
+        anchorEl={anchorEl}
+        open={Boolean(anchorEl)}
+        onClose={handleMenuClose}
+      >
+        <Box sx={{ position: 'relative' }}>
+          <MenuItem 
+            onClick={handleEditClick}
+            disabled={selectedTask?.program_id && selectedTask?.program?.creator_id !== authUser()?._id && !selectedTask?.program?.is_personal}
+          >
+            <ListItemIcon>
+              <EditIcon fontSize="small" />
+            </ListItemIcon>
+            <ListItemText>Edit Task</ListItemText>
+          </MenuItem>
+          {selectedTask?.program_id && selectedTask?.program?.creator_id !== authUser()?._id && !selectedTask?.program?.is_personal && (
+            <Tooltip 
+              title="This task is part of a program created by another user and cannot be edited" 
+              arrow
+              placement="right"
+              sx={{ position: 'absolute', right: 0, top: '50%', transform: 'translateY(-50%)' }}
+            >
+              <InfoIcon sx={{ position: 'absolute', right: 8, top: '50%', transform: 'translateY(-50%)', fontSize: '1rem', color: 'text.secondary' }} />
+            </Tooltip>
+          )}
+        </Box>
+        <MenuItem onClick={handleDeleteClick}>
+          <ListItemIcon>
+            <DeleteIcon fontSize="small" />
+          </ListItemIcon>
+          <ListItemText>Delete Task</ListItemText>
+        </MenuItem>
+      </Menu>
 
       <RouterBottomNavigation />
     </PageContainer>
