@@ -147,7 +147,7 @@ const ProgramsCards = ({ programs, selectedProgram, handleSelectProgram, subscri
   // Generate the correct image URL
   const getProgramImageUrl = (program) => {
     if (!program || !program.image_url) {
-      return 'http://localhost:3001/public/assets/default-program.jpg';
+      return 'default-personal-program.jpg';
     }
     
     // Check if the path is already a full URL
@@ -156,7 +156,7 @@ const ProgramsCards = ({ programs, selectedProgram, handleSelectProgram, subscri
     }
     
     // Otherwise, construct the URL from the path
-    return `http://localhost:3001/${program.image_url}`;
+    return program.image_url;
   };
 
   return (

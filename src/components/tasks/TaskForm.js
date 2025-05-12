@@ -17,6 +17,7 @@ import {
   Alert
 } from '@mui/material';
 import InfoIcon from '@mui/icons-material/Info';
+import { format } from 'date-fns';
 
 const TaskForm = ({ 
   open, 
@@ -24,12 +25,13 @@ const TaskForm = ({
   onSubmit, 
   mode = 'add', // 'add' or 'edit'
   initialTask = null,
-  isProgramTask = false
+  isProgramTask = false,
+  defaultDueDate = new Date()
 }) => {
   const [task, setTask] = useState({
     title: '',
     description: '',
-    dueDate: '',
+    dueDate: format(new Date(defaultDueDate), 'yyyy-MM-dd'),
     isSticky: false,
     isRecurring: false,
     editRecurrence: false,
@@ -62,11 +64,11 @@ const TaskForm = ({
           0: false, 1: false, 2: false, 3: false, 4: false, 5: false, 6: false
         }
       });
-    } else {
+    } else if (mode === 'add') {
       setTask({
         title: '',
         description: '',
-        dueDate: '',
+        dueDate: format(new Date(defaultDueDate), 'yyyy-MM-dd'),
         isSticky: false,
         isRecurring: false,
         editRecurrence: false,
@@ -76,6 +78,16 @@ const TaskForm = ({
       });
     }
   }, [mode, initialTask]);
+
+  // Add new useEffect to handle defaultDueDate changes
+  useEffect(() => {
+    if (mode === 'add' && open) {
+      setTask(prevTask => ({
+        ...prevTask,
+        dueDate: format(new Date(defaultDueDate), 'yyyy-MM-dd')
+      }));
+    }
+  }, [defaultDueDate, mode, open]);
 
   const parseCronToDays = (cron) => {
     if (!cron) return { 0: false, 1: false, 2: false, 3: false, 4: false, 5: false, 6: false };
@@ -204,7 +216,9 @@ const TaskForm = ({
           }
           sx={{ mt: 2 }}
         />
-
+        
+        <br />
+        
         {mode === 'add' ? (
           <FormControlLabel
             control={

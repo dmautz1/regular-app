@@ -25,7 +25,11 @@ import {
   DialogContent,
   DialogContentText,
   DialogTitle,
-  CircularProgress
+  CircularProgress,
+  FormControl,
+  InputLabel,
+  Select,
+  MenuItem
 } from "@mui/material";
 import { styled } from '@mui/system';
 import {
@@ -36,11 +40,15 @@ import {
   Edit,
   Save,
   Cancel,
-  PhotoCamera
+  PhotoCamera,
+  Language,
+  Home,
+  LightMode
 } from "@mui/icons-material";
 import { useApi } from "../../utils/api";
 import { createClient } from '@supabase/supabase-js';
 import { updatePassword } from '../../utils/auth';
+import { getTimezones } from "../../utils/timezoneUtils";
 
 // Styled components for consistent look and feel
 const PageContainer = styled(Container)(({ theme }) => ({
@@ -227,6 +235,12 @@ function Settings() {
     success: false
   });
 
+  const [timezones, setTimezones] = useState([]);
+  const [selectedTimezone, setSelectedTimezone] = useState("");
+  const [selectedDefaultPage, setSelectedDefaultPage] = useState("dashboard");
+  const [selectedColorMode, setSelectedColorMode] = useState("light");
+  const [savingSettings, setSavingSettings] = useState(false);
+
   // Define fetchUserData outside useEffect so it can be called manually if needed
   const fetchUserData = async (force = false) => {
     // Don't fetch if we've already loaded the data, unless forced
@@ -235,6 +249,7 @@ function Settings() {
     try {
       setIsLoading(true);
       
+      // Fetch user profile data
       const userData = await api.get(`/users/profile`);
       
       // Update state with fetched data - ensure we handle null/undefined fields
@@ -253,6 +268,14 @@ function Settings() {
         setAvatarPreview(avatarFullUrl);
       } else {
         setAvatarPreview(null);
+      }
+
+      // Fetch user settings
+      const settingsData = await api.get('/settings');
+      if (settingsData) {
+        setSelectedTimezone(settingsData.timezone || Intl.DateTimeFormat().resolvedOptions().timeZone);
+        setSelectedDefaultPage(settingsData.default_page || 'dashboard');
+        setSelectedColorMode(settingsData.color_mode || 'light');
       }
       
       // Store original data for comparison when saving
@@ -300,6 +323,11 @@ function Settings() {
       initialDataLoaded.current = false;
     }
   }, [authUser]);
+
+  // Load timezones on component mount
+  useEffect(() => {
+    setTimezones(getTimezones());
+  }, []);
 
   // Handle dialog open/close
   const handleCreatorDialogOpen = () => setCreatorDialogOpen(true);
@@ -595,6 +623,34 @@ function Settings() {
     return true; // Placeholder, actual implementation needed
   };
 
+  // Handle settings change
+  const handleSettingsChange = async (setting, value) => {
+    setSavingSettings(true);
+
+    try {
+      await api.patch('/settings', {
+        timezone: setting === 'timezone' ? value : selectedTimezone,
+        default_page: setting === 'default_page' ? value : selectedDefaultPage,
+        color_mode: setting === 'color_mode' ? value : selectedColorMode
+      });
+
+      setSnackbar({
+        open: true,
+        message: 'Settings updated successfully',
+        severity: 'success'
+      });
+    } catch (error) {
+      console.error('Failed to update settings:', error);
+      setSnackbar({
+        open: true,
+        message: 'Failed to update settings',
+        severity: 'error'
+      });
+    } finally {
+      setSavingSettings(false);
+    }
+  };
+
   return (
     <PageContainer maxWidth="sm">
       <ScrollableContent>
@@ -722,6 +778,197 @@ function Settings() {
           </SettingsSectionTitle>
           
           <List sx={{ width: '100%' }}>
+            {/* Timezone Setting */}
+            <ListItem>
+              <ListItemIcon>
+                <Language sx={{ color: '#8A4EFC' }} />
+              </ListItemIcon>
+              <ListItemText 
+                primary="Timezone" 
+                secondary="Set your local timezone"
+                primaryTypographyProps={{ sx: { color: '#EEE' } }}
+                secondaryTypographyProps={{ sx: { color: '#61759b' } }}
+              />
+              <FormControl variant="outlined" size="small" sx={{ minWidth: 200 }}>
+                <Select
+                  value={selectedTimezone}
+                  onChange={(e) => {
+                    setSelectedTimezone(e.target.value);
+                    handleSettingsChange('timezone', e.target.value);
+                  }}
+                  disabled={savingSettings}
+                  sx={{
+                    color: '#EEE',
+                    '& .MuiOutlinedInput-notchedOutline': {
+                      borderColor: 'rgba(97, 117, 155, 0.5)',
+                    },
+                    '&:hover .MuiOutlinedInput-notchedOutline': {
+                      borderColor: 'rgba(97, 117, 155, 0.8)',
+                    },
+                    '&.Mui-focused .MuiOutlinedInput-notchedOutline': {
+                      borderColor: '#8A4EFC',
+                    },
+                    '& .MuiSelect-icon': {
+                      color: '#EEE',
+                    },
+                  }}
+                  MenuProps={{
+                    PaperProps: {
+                      sx: {
+                        bgcolor: '#202B3E',
+                        '& .MuiMenuItem-root': {
+                          color: '#EEE',
+                          '&:hover': {
+                            bgcolor: 'rgba(138, 78, 252, 0.1)',
+                          },
+                          '&.Mui-selected': {
+                            bgcolor: 'rgba(138, 78, 252, 0.2)',
+                            '&:hover': {
+                              bgcolor: 'rgba(138, 78, 252, 0.3)',
+                            },
+                          },
+                        },
+                      },
+                    },
+                  }}
+                >
+                  {timezones.map((tz) => (
+                    <MenuItem key={tz} value={tz}>
+                      {tz}
+                    </MenuItem>
+                  ))}
+                </Select>
+              </FormControl>
+            </ListItem>
+
+            <Divider sx={{ my: 1, backgroundColor: 'rgba(255, 255, 255, 0.1)' }} />
+
+            {/* Default Page Setting */}
+            <ListItem>
+              <ListItemIcon>
+                <Home sx={{ color: '#8A4EFC' }} />
+              </ListItemIcon>
+              <ListItemText 
+                primary="Default Page" 
+                secondary="Choose your landing page"
+                primaryTypographyProps={{ sx: { color: '#EEE' } }}
+                secondaryTypographyProps={{ sx: { color: '#61759b' } }}
+              />
+              <FormControl variant="outlined" size="small" sx={{ minWidth: 200 }}>
+                <Select
+                  value={selectedDefaultPage}
+                  onChange={(e) => {
+                    setSelectedDefaultPage(e.target.value);
+                    handleSettingsChange('default_page', e.target.value);
+                  }}
+                  disabled={savingSettings}
+                  sx={{
+                    color: '#EEE',
+                    '& .MuiOutlinedInput-notchedOutline': {
+                      borderColor: 'rgba(97, 117, 155, 0.5)',
+                    },
+                    '&:hover .MuiOutlinedInput-notchedOutline': {
+                      borderColor: 'rgba(97, 117, 155, 0.8)',
+                    },
+                    '&.Mui-focused .MuiOutlinedInput-notchedOutline': {
+                      borderColor: '#8A4EFC',
+                    },
+                    '& .MuiSelect-icon': {
+                      color: '#EEE',
+                    },
+                  }}
+                  MenuProps={{
+                    PaperProps: {
+                      sx: {
+                        bgcolor: '#202B3E',
+                        '& .MuiMenuItem-root': {
+                          color: '#EEE',
+                          '&:hover': {
+                            bgcolor: 'rgba(138, 78, 252, 0.1)',
+                          },
+                          '&.Mui-selected': {
+                            bgcolor: 'rgba(138, 78, 252, 0.2)',
+                            '&:hover': {
+                              bgcolor: 'rgba(138, 78, 252, 0.3)',
+                            },
+                          },
+                        },
+                      },
+                    },
+                  }}
+                >
+                  <MenuItem value="dashboard">Dashboard</MenuItem>
+                  <MenuItem value="tasks">Tasks</MenuItem>
+                  <MenuItem value="programs">Programs</MenuItem>
+                </Select>
+              </FormControl>
+            </ListItem>
+
+            <Divider sx={{ my: 1, backgroundColor: 'rgba(255, 255, 255, 0.1)' }} />
+
+            {/* Color Mode Setting */}
+            <ListItem>
+              <ListItemIcon>
+                <LightMode sx={{ color: '#8A4EFC' }} />
+              </ListItemIcon>
+              <ListItemText 
+                primary="Color Mode" 
+                secondary="Choose your color mode"
+                primaryTypographyProps={{ sx: { color: '#EEE' } }}
+                secondaryTypographyProps={{ sx: { color: '#61759b' } }}
+              />
+              <FormControl variant="outlined" size="small" sx={{ minWidth: 200 }}>
+                <Select
+                  value={selectedColorMode}
+                  onChange={(e) => {
+                    setSelectedColorMode(e.target.value);
+                    handleSettingsChange('color_mode', e.target.value);
+                  }}
+                  disabled={savingSettings}
+                  sx={{
+                    color: '#EEE',
+                    '& .MuiOutlinedInput-notchedOutline': {
+                      borderColor: 'rgba(97, 117, 155, 0.5)',
+                    },
+                    '&:hover .MuiOutlinedInput-notchedOutline': {
+                      borderColor: 'rgba(97, 117, 155, 0.8)',
+                    },
+                    '&.Mui-focused .MuiOutlinedInput-notchedOutline': {
+                      borderColor: '#8A4EFC',
+                    },
+                    '& .MuiSelect-icon': {
+                      color: '#EEE',
+                    },
+                  }}
+                  MenuProps={{
+                    PaperProps: {
+                      sx: {
+                        bgcolor: '#202B3E',
+                        '& .MuiMenuItem-root': {
+                          color: '#EEE',
+                          '&:hover': {
+                            bgcolor: 'rgba(138, 78, 252, 0.1)',
+                          },
+                          '&.Mui-selected': {
+                            bgcolor: 'rgba(138, 78, 252, 0.2)',
+                            '&:hover': {
+                              bgcolor: 'rgba(138, 78, 252, 0.3)',
+                            },
+                          },
+                        },
+                      },
+                    },
+                  }}
+                >
+                  <MenuItem value="light">Light</MenuItem>
+                  <MenuItem value="dark">Dark</MenuItem>
+                </Select>
+              </FormControl>
+            </ListItem>
+
+            <Divider sx={{ my: 1, backgroundColor: 'rgba(255, 255, 255, 0.1)' }} />
+
+            {/* Password Reset */}
             <ListItem button onClick={handleResetDialogOpen}>
               <ListItemIcon>
                 <Lock sx={{ color: '#8A4EFC' }} />
@@ -736,6 +983,7 @@ function Settings() {
             
             <Divider sx={{ my: 1, backgroundColor: 'rgba(255, 255, 255, 0.1)' }} />
             
+            {/* Creator Platform */}
             <ListItem button onClick={handleCreatorDialogOpen}>
               <ListItemIcon>
                 <Star sx={{ color: '#8A4EFC' }} />
@@ -761,6 +1009,7 @@ function Settings() {
             
             <Divider sx={{ my: 1, backgroundColor: 'rgba(255, 255, 255, 0.1)' }} />
             
+            {/* Sign Out */}
             <ListItem button onClick={handleSignOut}>
               <ListItemIcon>
                 <Logout sx={{ color: '#8A4EFC' }} />

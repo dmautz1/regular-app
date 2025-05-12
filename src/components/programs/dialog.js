@@ -2,6 +2,7 @@ import * as React from 'react';
 import { useState, useEffect } from "react";
 import { Grid } from '@mui/material';
 import { useAuthHeader, useAuthUser } from 'react-auth-kit'
+import { useApi } from '../../utils/api';
 import { 
   Typography, 
   Box, 
@@ -30,7 +31,9 @@ import RemoveDoneIcon from '@mui/icons-material/RemoveDone';
 import CategoryIcon from '@mui/icons-material/Category';
 import ScheduleIcon from '@mui/icons-material/Schedule';
 import PeopleIcon from '@mui/icons-material/People';
+import EditIcon from '@mui/icons-material/Edit';
 import cronParser from 'cron-parser';
+import ActivityForm from './ActivityForm';
 
 // Styled components for consistent design
 const StyledDialog = styled(Dialog)(({ theme }) => ({
@@ -274,9 +277,20 @@ export default function ProgramDialog({ selectedProgram, isDialogOpened, handleC
   const [activeDay, setActiveDay] = useState(new Date().getDay());
   const [isTabLoading, setIsTabLoading] = useState(false);
   const [tabTransitioning, setTabTransitioning] = useState(false);
+  const [isActivityFormOpen, setIsActivityFormOpen] = useState(false);
+  const [selectedActivity, setSelectedActivity] = useState(null);
+  const [activities, setActivities] = useState([]);
+  const authHeader = useAuthHeader();
+  const api = useApi();
   
   const weekdays = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
   const shortWeekdays = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
+
+  useEffect(() => {
+    if (selectedProgram?.activities) {
+      setActivities(selectedProgram.activities);
+    }
+  }, [selectedProgram]);
 
   useEffect(() => {
     // Reset to current day's tab when dialog opens
@@ -430,7 +444,7 @@ export default function ProgramDialog({ selectedProgram, isDialogOpened, handleC
   // Generate the correct image URL
   const getProgramImageUrl = (program) => {
     if (!program || !program.image_url) {
-      return 'http://localhost:3001/public/assets/default-program.jpg';
+      return 'default-personal-program.jpg';
     }
     
     // Check if the path is already a full URL
@@ -439,7 +453,7 @@ export default function ProgramDialog({ selectedProgram, isDialogOpened, handleC
     }
     
     // Otherwise, construct the URL from the path
-    return `http://localhost:3001/${program.image_url}`;
+    return program.image_url;
   };
 
   // Loading placeholder for about tab
@@ -464,6 +478,33 @@ export default function ProgramDialog({ selectedProgram, isDialogOpened, handleC
       <Skeleton variant="rounded" width="100%" height={200} sx={{ bgcolor: 'rgba(255, 255, 255, 0.1)' }} />
     </PlaceholderContainer>
   );
+
+  const handleEditActivity = (activity) => {
+    setSelectedActivity(activity);
+    setIsActivityFormOpen(true);
+  };
+
+  const handleActivitySubmit = async (activityData) => {
+    try {
+      const updatedActivity = await api.patch(`/activities/${selectedActivity.id}`, activityData);
+      
+      // Reload the program to get fresh data
+      const updatedProgram = await api.get(`/programs/${selectedProgram.id}`);
+      if (updatedProgram) {
+        // Update both the activities state and the selectedProgram
+        setActivities(updatedProgram.activities);
+        // Update the parent component's program data
+        if (typeof handleCloseDialog === 'function') {
+          handleCloseDialog(false, updatedProgram);
+        }
+      }
+
+      setIsActivityFormOpen(false);
+      setSelectedActivity(null);
+    } catch (error) {
+      console.error('Error updating activity:', error);
+    }
+  };
 
   if (!selectedProgram) return null;
 
@@ -638,9 +679,20 @@ export default function ProgramDialog({ selectedProgram, isDialogOpened, handleC
                               </TimeSlot>
                               
                               <Box sx={{ flex: 1, ml: 2 }}>
-                                <Typography variant="body1" sx={{ color: 'white', fontWeight: 500, mb: 0.5 }}>
-                                  {activity.title}
-                                </Typography>
+                                <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+                                  <Typography variant="body1" sx={{ color: 'white', fontWeight: 500, mb: 0.5 }}>
+                                    {activity.title}
+                                  </Typography>
+                                  {selectedProgram.is_personal && (
+                                    <IconButton 
+                                      size="small" 
+                                      onClick={() => handleEditActivity(activity)}
+                                      sx={{ color: '#8A4EFC' }}
+                                    >
+                                      <EditIcon fontSize="small" />
+                                    </IconButton>
+                                  )}
+                                </Box>
                                 {activity.description && (
                                   <Typography variant="body2" sx={{ color: '#A4B1CD', fontSize: '0.85rem' }}>
                                     {activity.description}
@@ -672,6 +724,17 @@ export default function ProgramDialog({ selectedProgram, isDialogOpened, handleC
           </ActionButton>
         )}
       </StyledDialogActions>
+
+      <ActivityForm
+        open={isActivityFormOpen}
+        onClose={() => {
+          setIsActivityFormOpen(false);
+          setSelectedActivity(null);
+        }}
+        onSubmit={handleActivitySubmit}
+        initialActivity={selectedActivity}
+        mode="edit"
+      />
     </StyledDialog>
   );
 }

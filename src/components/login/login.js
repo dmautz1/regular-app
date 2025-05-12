@@ -147,7 +147,7 @@ function Login() {
         });
         
         setLoading(false);
-        navigate("/");
+        navigate('/');
       } catch (err) {
         setLoading(false);
         setError(err.message || "Login failed. Please try again.");

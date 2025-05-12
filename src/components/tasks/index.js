@@ -44,6 +44,7 @@ import EditIcon from '@mui/icons-material/Edit';
 import DeleteIcon from '@mui/icons-material/Delete';
 import CelebrationOverlay from "./CelebrationOverlay";
 import TaskForm from './TaskForm';
+import RepeatIcon from '@mui/icons-material/Repeat';
 
 // Styled components
 const PageContainer = styled(Container)(({ theme }) => ({
@@ -110,9 +111,18 @@ const TaskItem = styled(Paper)(({ theme, completed }) => ({
   position: 'relative',
   boxShadow: '0 3px 8px rgba(0, 0, 0, 0.15)',
   overflow: 'hidden', // Prevent child content from affecting border radius
+  minHeight: '64px', // Add minimum height
   '&:hover': {
     transform: 'translateY(-2px)',
     boxShadow: '0 6px 12px rgba(0, 0, 0, 0.2)'
+  },
+  '& .item': {
+    minHeight: '64px', // Ensure inner content also has minimum height
+    display: 'flex',
+    alignItems: 'center',
+    padding: '16px',
+    width: '100%',
+    margin: 0
   }
 }));
 
@@ -249,7 +259,15 @@ function Dashboard() {
       console.log(`Received ${data ? data.length : 0} tasks from API:`, data);
       
       if (Array.isArray(data)) {
-        setTasks(data);
+        // Sort tasks: sticky tasks first, then by creation date
+        const sortedTasks = [...data].sort((a, b) => {
+          // First sort by sticky status
+          if (a.is_sticky && !b.is_sticky) return -1;
+          if (!a.is_sticky && b.is_sticky) return 1;
+          // If both are sticky or both are not sticky, sort by creation date
+          return new Date(a.created_at) - new Date(b.created_at);
+        });
+        setTasks(sortedTasks);
       } else {
         console.error("API did not return an array of tasks:", data);
         setTasks([]);
@@ -592,20 +610,27 @@ function Dashboard() {
                           );
                         })()}
                         
-                        <Box sx={{ flexGrow: 1, display: 'flex', alignItems: 'center' }}>
+                        <Box sx={{ flexGrow: 1, display: 'flex', alignItems: 'center', gap: 1 }}>
                           <TaskTitle completed={task.is_completed}>
                             {task.title}
                           </TaskTitle>
-                          {task.is_sticky && (
-                            <Tooltip title="This is a sticky task - it will continue day to day until it is completed." arrow placement="top">
-                              <PushPinIcon sx={{ ml: 1, fontSize: '1rem', color: 'text.secondary' }} />
-                            </Tooltip>
-                          )}
+                          <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
+                            {task.is_sticky && (
+                              <Tooltip title="This is a sticky task - it will continue day to day until it is completed." arrow placement="top">
+                                <PushPinIcon sx={{ fontSize: '1rem', color: '#8A4EFC', marginRight: '4px' }} />
+                              </Tooltip>
+                            )}
+                            {task.activity_id && task.activity?.cron && (
+                              <Tooltip title="This is a recurring task" arrow placement="top">
+                                <RepeatIcon sx={{ fontSize: '1rem', color: '#8A4EFC', marginRight: '4px' }} />
+                              </Tooltip>
+                            )}
+                          </Box>
                         </Box>
                         
                         <IconButton 
                           onClick={(e) => handleMenuClick(e, task)}
-                          sx={{ color: 'text.secondary' }}
+                          sx={{ color: 'text.secondary', ml: 1 }}
                         >
                           <MoreVertIcon />
                         </IconButton>
@@ -639,6 +664,7 @@ function Dashboard() {
         onClose={() => setAddDialogOpen(false)}
         onSubmit={handleAddTask}
         mode="add"
+        defaultDueDate={day}
       />
 
       {/* Edit Task Form */}
