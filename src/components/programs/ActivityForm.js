@@ -123,14 +123,14 @@ const ActivityForm = ({
         color: '#131A26',
         textAlign: 'center'
       }}>
-        {mode === 'add' ? 'Add New Activity' : 'Edit Activity'}
+        {mode === 'add' ? 'Add Scheduled Task' : 'Edit Scheduled Task'}
       </DialogTitle>
       
       <DialogContent>
         <TextField
           autoFocus
           margin="dense"
-          label="Activity Name"
+          label="Task Name"
           type="text" 
           fullWidth
           variant="outlined"
@@ -204,7 +204,7 @@ const ActivityForm = ({
             ml: 2
           }}
         >
-          {mode === 'add' ? 'Add Activity' : 'Save Changes'}
+          {mode === 'add' ? 'Add Task' : 'Save Changes'}
         </Button>
       </DialogActions>
     </Dialog>

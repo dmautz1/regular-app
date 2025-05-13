@@ -32,6 +32,7 @@ import CategoryIcon from '@mui/icons-material/Category';
 import ScheduleIcon from '@mui/icons-material/Schedule';
 import PeopleIcon from '@mui/icons-material/People';
 import EditIcon from '@mui/icons-material/Edit';
+import AddIcon from '@mui/icons-material/Add';
 import cronParser from 'cron-parser';
 import ActivityForm from './ActivityForm';
 
@@ -484,9 +485,23 @@ export default function ProgramDialog({ selectedProgram, isDialogOpened, handleC
     setIsActivityFormOpen(true);
   };
 
+  const handleAddActivity = () => {
+    setSelectedActivity(null);
+    setIsActivityFormOpen(true);
+  };
+
   const handleActivitySubmit = async (activityData) => {
     try {
-      const updatedActivity = await api.patch(`/activities/${selectedActivity.id}`, activityData);
+      if (selectedActivity) {
+        // Edit existing activity
+        const updatedActivity = await api.patch(`/activities/${selectedActivity.id}`, activityData);
+      } else {
+        // Create new activity
+        const newActivity = await api.post('/activities', {
+          programId: selectedProgram.id,
+          activities: [activityData]
+        });
+      }
       
       // Reload the program to get fresh data
       const updatedProgram = await api.get(`/programs/${selectedProgram.id}`);
@@ -502,7 +517,7 @@ export default function ProgramDialog({ selectedProgram, isDialogOpened, handleC
       setIsActivityFormOpen(false);
       setSelectedActivity(null);
     } catch (error) {
-      console.error('Error updating activity:', error);
+      console.error('Error saving activity:', error);
     }
   };
 
@@ -645,14 +660,14 @@ export default function ProgramDialog({ selectedProgram, isDialogOpened, handleC
                     ))}
                   </WeekdayGridContainer>
                   
-                  <Box sx={{ p: 2, bgcolor: '#202B3E' }}>
+                  <Box sx={{ p: 2, bgcolor: '#202B3E' }}>                
                     {getActivities(activeDay).length === 0 ? (
                       <EmptyDay>
                         <Typography variant="body1" sx={{ color: '#EEE', mb: 1 }}>
-                          No Activities Scheduled
+                          No Tasks Scheduled
                         </Typography>
                         <Typography variant="caption" sx={{ color: '#61759b' }}>
-                          There are no activities scheduled for {weekdays[activeDay]}
+                          There are no tasks scheduled for {weekdays[activeDay]}
                         </Typography>
                       </EmptyDay>
                     ) : (
@@ -723,6 +738,11 @@ export default function ProgramDialog({ selectedProgram, isDialogOpened, handleC
             Subscribe to Program
           </ActionButton>
         )}
+        {selectedProgram.is_personal && (
+          <ActionButton variant="contained" onClick={handleAddActivity} startIcon={<AddIcon />}>
+            Add Scheduled Task
+          </ActionButton>
+        )}
       </StyledDialogActions>
 
       <ActivityForm
@@ -733,7 +753,7 @@ export default function ProgramDialog({ selectedProgram, isDialogOpened, handleC
         }}
         onSubmit={handleActivitySubmit}
         initialActivity={selectedActivity}
-        mode="edit"
+        mode={selectedActivity ? 'edit' : 'add'}
       />
     </StyledDialog>
   );
