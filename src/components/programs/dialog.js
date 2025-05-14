@@ -369,9 +369,15 @@ export default function ProgramDialog({ selectedProgram, isDialogOpened, handleC
     
     // Sort activities by time
     return activities.sort((a, b) => {
-      const timeA = a.cron.split(' ')[1] + a.cron.split(' ')[0];
-      const timeB = b.cron.split(' ')[1] + b.cron.split(' ')[0];
-      return timeA.localeCompare(timeB);
+      const [minuteA, hourA] = a.cron.split(' ').slice(0, 2).map(Number);
+      const [minuteB, hourB] = b.cron.split(' ').slice(0, 2).map(Number);
+      
+      // Compare hours first
+      if (hourA !== hourB) {
+        return hourA - hourB;
+      }
+      // If hours are the same, compare minutes
+      return minuteA - minuteB;
     });
   };
 

@@ -182,6 +182,7 @@ function Programs() {
   const [userSubscriptions, setUserSubscriptions] = useState([]);
   const [error, setError] = useState(null);
   const [isLoading, setIsLoading] = useState(true);
+  const [categories, setCategories] = useState([]);
 
   const GetUserSubscriptions = useCallback(() => {
     setIsLoading(true);
@@ -201,12 +202,17 @@ function Programs() {
     setIsLoading(true);
     api.get('/programs/feed')
       .then((data) => {
-        setFeedPrograms(Array.isArray(data) ? data : []);
+        const programs = Array.isArray(data) ? data : [];
+        setFeedPrograms(programs);
+        // Extract unique categories from programs
+        const uniqueCategories = [...new Set(programs.map(program => program.category).filter(Boolean))];
+        setCategories(uniqueCategories);
       })
       .catch((err) => {
         console.log("Error: ", err);
         setError("An error occurred while loading programs.");
         setFeedPrograms([]);
+        setCategories([]);
       })
       .finally(() => setIsLoading(false));
   }, [api, setError]);
@@ -250,6 +256,10 @@ function Programs() {
 
   const handleTabChange = (event, newValue) => {
     setTabValue(newValue);
+    if (newValue === 1) { // Browse Programs tab
+      setIsLoading(true);
+      GetFeedPrograms();
+    }
   };
 
   const handleFilterChange = (event) => {
@@ -396,9 +406,11 @@ function Programs() {
                     }}
                   >
                     <MenuItem value="all">All Categories</MenuItem>
-                    <MenuItem value="fitness">Fitness</MenuItem>
-                    <MenuItem value="productivity">Productivity</MenuItem>
-                    <MenuItem value="self-improvement">Self-Improvement</MenuItem>
+                    {categories.map((category) => (
+                      <MenuItem key={category} value={category}>
+                        {category.charAt(0).toUpperCase() + category.slice(1)}
+                      </MenuItem>
+                    ))}
                   </Select>
                 </FormControl>
               </Grid>
@@ -442,13 +454,11 @@ function Programs() {
               flexDirection: 'column', 
               alignItems: 'center', 
               justifyContent: 'center',
-              minHeight: '200px',
-              textAlign: 'center',
-              padding: '40px 20px',
-              color: '#61759b' 
+              height: '100%',
+              py: 4
             }}>
               <CircularProgress sx={{ color: '#8A4EFC', mb: 2 }} />
-              <Typography variant="h6" sx={{ color: '#eee' }}>
+              <Typography variant="body1" sx={{ color: '#A4B1CD' }}>
                 Loading programs...
               </Typography>
             </Box>

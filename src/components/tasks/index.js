@@ -259,12 +259,25 @@ function Dashboard() {
       console.log(`Received ${data ? data.length : 0} tasks from API:`, data);
       
       if (Array.isArray(data)) {
-        // Sort tasks: sticky tasks first, then by creation date
+        // Sort tasks: sticky tasks first, then by time, then by creation date
         const sortedTasks = [...data].sort((a, b) => {
           // First sort by sticky status
           if (a.is_sticky && !b.is_sticky) return -1;
           if (!a.is_sticky && b.is_sticky) return 1;
-          // If both are sticky or both are not sticky, sort by creation date
+          
+          // If both are sticky or both are not sticky, sort by time
+          const getTimeValue = (task) => {
+            if (!task.activity?.cron) return 999999; // Put tasks without time at the end
+            const [minute, hour] = task.activity.cron.split(' ').slice(0, 2).map(Number);
+            return hour * 60 + minute; // Convert to minutes for easier comparison
+          };
+          
+          const timeA = getTimeValue(a);
+          const timeB = getTimeValue(b);
+          
+          if (timeA !== timeB) return timeA - timeB;
+          
+          // If times are the same, sort by creation date
           return new Date(a.created_at) - new Date(b.created_at);
         });
         setTasks(sortedTasks);
@@ -531,6 +544,14 @@ function Dashboard() {
     setAnchorEl(null);
   };
 
+  const formatTimeFromCron = (cron) => {
+    if (!cron) return '';
+    const [minute, hour] = cron.split(' ');
+    const date = new Date();
+    date.setHours(parseInt(hour), parseInt(minute));
+    return date.toLocaleTimeString([], { hour: 'numeric', minute: '2-digit' });
+  };
+
   return (
     <PageContainer maxWidth="sm">
       <TaskContainer>
@@ -611,20 +632,42 @@ function Dashboard() {
                         })()}
                         
                         <Box sx={{ flexGrow: 1, display: 'flex', alignItems: 'center', gap: 1 }}>
-                          <TaskTitle completed={task.is_completed}>
+                          <TaskTitle completed={task.is_completed} sx={{ 
+                            overflow: 'hidden',
+                            textOverflow: 'ellipsis',
+                            whiteSpace: 'nowrap',
+                            flex: 1
+                          }}>
                             {task.title}
                           </TaskTitle>
-                          <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
-                            {task.is_sticky && (
-                              <Tooltip title="This is a sticky task - it will continue day to day until it is completed." arrow placement="top">
-                                <PushPinIcon sx={{ fontSize: '1rem', color: '#8A4EFC', marginRight: '4px' }} />
-                              </Tooltip>
+                          <Box sx={{ 
+                            display: 'flex', 
+                            alignItems: 'center', 
+                            gap: 1,
+                            ml: 'auto',
+                            minWidth: 'fit-content'
+                          }}>
+                            {task.activity?.cron && (
+                              <Typography variant="body2" sx={{ 
+                                color: '#A4B1CD',
+                                minWidth: '80px',
+                                textAlign: 'right'
+                              }}>
+                                {formatTimeFromCron(task.activity.cron)}
+                              </Typography>
                             )}
-                            {task.activity_id && task.activity?.cron && (
-                              <Tooltip title="This is a recurring task" arrow placement="top">
-                                <RepeatIcon sx={{ fontSize: '1rem', color: '#8A4EFC', marginRight: '4px' }} />
-                              </Tooltip>
-                            )}
+                            <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
+                              {task.is_sticky && (
+                                <Tooltip title="This is a sticky task - it will continue day to day until it is completed." arrow placement="top">
+                                  <PushPinIcon sx={{ fontSize: '1rem', color: '#8A4EFC' }} />
+                                </Tooltip>
+                              )}
+                              {task.activity_id && task.activity?.cron && (
+                                <Tooltip title="This is a recurring task" arrow placement="top">
+                                  <RepeatIcon sx={{ fontSize: '1rem', color: '#8A4EFC' }} />
+                                </Tooltip>
+                              )}
+                            </Box>
                           </Box>
                         </Box>
                         
