@@ -65,7 +65,7 @@ function ComingSoon() {
             startIcon={<ArrowBack />}
             onClick={() => navigate('/')}
           >
-            Back to Home
+            Back to Dashboard
           </Button>
         </Box>
       </Paper>

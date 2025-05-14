@@ -160,7 +160,7 @@ const EmptyState = styled(Box)(({ theme }) => ({
   textAlign: 'center'
 }));
 
-function Dashboard() {
+function Tasks() {
   const authUser = useAuthUser();
   console.log(authUser());
   const api = useApi();
@@ -832,4 +832,4 @@ function Dashboard() {
   );
 }
 
-export { Dashboard };
+export { Tasks };

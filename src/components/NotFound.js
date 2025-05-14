@@ -9,7 +9,7 @@ import {
 } from '@mui/material';
 import { 
   SentimentDissatisfied, 
-  Home 
+  Dashboard 
 } from '@mui/icons-material';
 
 /**
@@ -52,10 +52,10 @@ function NotFound() {
             variant="contained" 
             color="primary" 
             size="large"
-            startIcon={<Home />}
+            startIcon={<Dashboard />}
             onClick={() => navigate('/')}
           >
-            Go to Home Page
+            Go to Dashboard
           </Button>
         </Box>
       </Paper>

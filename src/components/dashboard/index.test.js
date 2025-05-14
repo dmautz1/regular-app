@@ -1,7 +1,7 @@
 import React from 'react';
 import { screen, fireEvent } from '@testing-library/react';
 import { renderWithProviders } from '../../tests/test-utils';
-import { Home } from './index';
+import { Dashboard } from './index';
 import { useSignOut, useNavigate } from 'react-auth-kit';
 
 // Mock the navigation and auth hooks
@@ -11,7 +11,7 @@ jest.mock('react-auth-kit', () => ({
   useNavigate: jest.fn()
 }));
 
-describe('Home Component', () => {
+describe('Dashboard Component', () => {
   beforeEach(() => {
     // Setup mocks
     const mockSignOut = jest.fn();
@@ -19,7 +19,7 @@ describe('Home Component', () => {
   });
 
   it('renders without crashing', () => {
-    renderWithProviders(<Home />);
+    renderWithProviders(<Dashboard />);
     
     // Check that the title is rendered
     expect(screen.getByText('Daily Task App')).toBeInTheDocument();
@@ -35,7 +35,7 @@ describe('Home Component', () => {
     useSignOut.mockReturnValue(mockSignOut);
     useNavigate.mockReturnValue(mockNavigate);
     
-    renderWithProviders(<Home />);
+    renderWithProviders(<Dashboard />);
     
     // Click the logout button
     fireEvent.click(screen.getByText('Logout'));

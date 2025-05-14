@@ -115,7 +115,7 @@ const QuickAddButton = styled(Button)(({ theme }) => ({
   }
 }));
 
-function Home() {
+function Dashboard() {
   const navigate = useNavigate();
   const authUser = useAuthUser();
   const apiInstance = useApi();
@@ -532,4 +532,4 @@ function Home() {
   );
 }
 
-export default Home;
+export default Dashboard;

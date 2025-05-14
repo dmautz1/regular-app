@@ -4,8 +4,8 @@ import styled from "styled-components";
 import { Route, Routes } from "react-router-dom";
 import Login from "./components/login/login";
 import Register from "./components/register/register";
-import Home from "./components/home";
-import { Dashboard } from "./components/tasks";
+import Dashboard from "./components/dashboard";
+import { Tasks } from "./components/tasks";
 import { Programs } from "./components/programs";
 import { ProgramNew } from "./components/programs/new";
 import { ProgramEdit } from "./components/programs/edit";
@@ -70,15 +70,15 @@ function App() {
           <Route path="/" element={<Redirect />} />
           
           {/* Protected routes */}
-          <Route path="/home" element={
+          <Route path="/dashboard" element={
             <ProtectedRoute>
-              <Home />
+              <Dashboard />
             </ProtectedRoute>
           } />
           
           <Route path="/tasks" element={
             <ProtectedRoute>
-              <Dashboard />
+              <Tasks />
             </ProtectedRoute>
           } />
           

@@ -1,6 +1,6 @@
 import { useLocation, Link } from 'react-router-dom';
 import { BottomNavigation, BottomNavigationAction, Paper } from '@mui/material';
-import { Home, Checklist, Settings, EmojiEvents } from '@mui/icons-material';
+import { Dashboard as DashboardIcon, Checklist, Settings, EmojiEvents } from '@mui/icons-material';
 import { styled } from '@mui/system';
 /* import icons */
 
@@ -56,10 +56,10 @@ function RouterBottomNavigation() {
       >
         <StyledNavigationAction
           component={Link}
-          to="/home"
-          value="/home"
-          label="Home"
-          icon={<Home />}
+          to="/dashboard"
+          value="/dashboard"
+          label="Dashboard"
+          icon={<DashboardIcon />}
         />
         <StyledNavigationAction
           component={Link}

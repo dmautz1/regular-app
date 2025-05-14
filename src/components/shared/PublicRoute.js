@@ -27,9 +27,9 @@ function PublicRoute({ children }) {
   
   // If user is already authenticated, redirect to home
   if (userIsAuthenticated) {
-    console.log('User is already authenticated, redirecting to home from public route');
+    console.log('User is already authenticated, redirecting to dashboard from public route');
     // Preserve intended destination if it was passed in state
-    const destination = location.state?.from || '/home';
+    const destination = location.state?.from || '/dashboard';
     return <Navigate to={destination} replace />;
   }
   
