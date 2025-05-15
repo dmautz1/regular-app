@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   Dialog,
   DialogTitle,
@@ -12,7 +12,7 @@ import {
   Box
 } from '@mui/material';
 import { styled } from '@mui/system';
-import ReCAPTCHA from "react-google-recaptcha";
+import { loadReCaptcha } from "react-recaptcha-v3";
 import { requestPasswordReset } from '../../utils/auth';
 
 const FormField = styled(TextField)(({ theme }) => ({
@@ -66,7 +66,11 @@ const ForgotPasswordDialog = ({ open, onClose }) => {
   const [error, setError] = useState(null);
   const [success, setSuccess] = useState(false);
   const [loading, setLoading] = useState(false);
-  const [recaptchaToken, setRecaptchaToken] = useState("");
+  
+  useEffect(() => {
+    // Initialize reCAPTCHA v3
+    loadReCaptcha(process.env.REACT_APP_RECAPTCHA_SITE_KEY);
+  }, []);
   
   const handleChange = (e) => {
     setEmail(e.target.value);
@@ -80,17 +84,12 @@ const ForgotPasswordDialog = ({ open, onClose }) => {
       setError('Please enter your email address');
       return;
     }
-
-    if (!recaptchaToken) {
-      setError("Please complete the reCAPTCHA verification");
-      return;
-    }
     
     setLoading(true);
     setError(null);
     
     try {
-      const { error } = await requestPasswordReset(email);
+      const { error } = await requestPasswordReset(email, await window.grecaptcha.execute(process.env.REACT_APP_RECAPTCHA_SITE_KEY, { action: 'forgot_password' }));
 
       if (error) {
         throw new Error(error.message);
@@ -110,20 +109,7 @@ const ForgotPasswordDialog = ({ open, onClose }) => {
     setError(null);
     setSuccess(false);
     setLoading(false);
-    setRecaptchaToken("");
     onClose();
-  };
-
-  const handleRecaptchaChange = (token) => {
-    setRecaptchaToken(token || "");
-    // Clear error message if it was about reCAPTCHA
-    if (error && error.includes("reCAPTCHA")) {
-      setError("");
-    }
-  };
-
-  const handleRecaptchaExpired = () => {
-    setRecaptchaToken("");
   };
   
   return (
@@ -167,31 +153,26 @@ const ForgotPasswordDialog = ({ open, onClose }) => {
               onChange={handleChange}
               disabled={loading}
             />
-
-            {/* Add reCAPTCHA */}
-            <Box display="flex" justifyContent="center" sx={{ mt: 3, mb: 1 }}>
-              <ReCAPTCHA
-                sitekey={process.env.REACT_APP_RECAPTCHA_SITE_KEY || "YOUR_RECAPTCHA_SITE_KEY"}
-                onChange={handleRecaptchaChange}
-                onExpired={handleRecaptchaExpired}
-                theme="dark"
-                size="compact"
-              />
-            </Box>
           </>
         )}
       </DialogContent>
-      <DialogActions sx={{ padding: '16px' }}>
+      <DialogActions sx={{ p: 3, pt: 0 }}>
         <Button 
-          onClick={handleClose} 
-          sx={{ color: '#61759b' }}
+          onClick={handleClose}
+          sx={{ 
+            color: '#A4B1CD',
+            '&:hover': {
+              backgroundColor: 'rgba(138, 78, 252, 0.08)',
+              color: '#8A4EFC'
+            }
+          }}
         >
           {success ? 'Close' : 'Cancel'}
         </Button>
         {!success && (
-          <GradientButton 
+          <GradientButton
             onClick={handleSubmit}
-            disabled={loading || !recaptchaToken}
+            disabled={loading || !email}
           >
             {loading ? <CircularProgress size={24} color="inherit" /> : 'Send Reset Link'}
           </GradientButton>

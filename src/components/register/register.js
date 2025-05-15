@@ -3,7 +3,7 @@ import { useNavigate } from "react-router-dom";
 import { useFormik } from "formik";
 import * as Yup from 'yup';
 import { useApi } from "../../utils/api";
-import ReCAPTCHA from "react-google-recaptcha";
+import { loadReCaptcha } from "react-recaptcha-v3";
 import {
   Container,
   Box,
@@ -100,9 +100,13 @@ const TextButton = styled(Button)(({ theme }) => ({
 function Register() {
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
-  const [recaptchaToken, setRecaptchaToken] = useState("");
   const navigate = useNavigate();
   const api = useApi();
+
+  useEffect(() => {
+    // Initialize reCAPTCHA v3
+    loadReCaptcha(process.env.REACT_APP_RECAPTCHA_SITE_KEY);
+  }, []);
 
   const formik = useFormik({
     initialValues: {
@@ -116,20 +120,13 @@ function Register() {
       passwordConfirmation: Yup.string().oneOf([Yup.ref('password'), null], 'Passwords must match').required('Please confirm your password')
     }),
     onSubmit: async (values) => {
-      if (!recaptchaToken) {
-        setError("Please complete the reCAPTCHA verification");
-        return;
-      }
-      
       setError("");
       setLoading(true);
 
       try {
         await api.post("/auth/register", {
-          email: values.email,
-          password: values.password,
-          passwordConfirmation: values.passwordConfirmation,
-          recaptchaToken
+          ...values,
+          recaptchaToken: await window.grecaptcha.execute(process.env.REACT_APP_RECAPTCHA_SITE_KEY, { action: 'register' })
         });
         setLoading(false);
         // Success - navigate to login with success message
@@ -144,28 +141,11 @@ function Register() {
     },
   });
 
-  const handleRecaptchaChange = (token) => {
-    setRecaptchaToken(token || "");
-    // Clear error message if it was about reCAPTCHA
-    if (error && error.includes("reCAPTCHA")) {
-      setError("");
-    }
-  };
-
-  const handleRecaptchaExpired = () => {
-    setRecaptchaToken("");
-  };
-
-  // Debug the site key
-  useEffect(() => {
-    console.log('ReCAPTCHA Site Key (Register):', process.env.REACT_APP_RECAPTCHA_SITE_KEY);
-  }, []);
-
   return (
-    <PageContainer maxWidth="lg">
+    <PageContainer>
       <RegisterContainer>
         <Typography variant="h4" component="h1" color="#EEE" align="center" fontWeight="600">
-          Create Account
+          Create Your Account
         </Typography>
         
         {error && (
@@ -175,10 +155,6 @@ function Register() {
         )}
         
         <Box component="form" onSubmit={formik.handleSubmit}>
-          <Typography color="#A4B1CD" paragraph>
-            Sign up to start your journey
-          </Typography>
-          
           <FormField
             label="Email Address"
             name="email"
@@ -228,20 +204,10 @@ function Register() {
             disabled={loading}
           />
           
-          {/* Add reCAPTCHA */}
-          <Box display="flex" justifyContent="center" sx={{ my: 2 }}>
-            <ReCAPTCHA
-              sitekey={process.env.REACT_APP_RECAPTCHA_SITE_KEY}
-              onChange={handleRecaptchaChange}
-              onExpired={handleRecaptchaExpired}
-              theme="dark"
-            />
-          </Box>
-          
           <GradientButton
             type="submit"
             fullWidth
-            disabled={loading || formik.isSubmitting || !recaptchaToken}
+            disabled={loading || formik.isSubmitting}
           >
             {loading ? <CircularProgress size={24} color="inherit" /> : 'Sign Up'}
           </GradientButton>

@@ -5,7 +5,7 @@ import * as Yup from 'yup';
 import { useApi } from "../../utils/api";
 import { useSignIn } from 'react-auth-kit';
 import ForgotPasswordDialog from "./forgot-password";
-import ReCAPTCHA from "react-google-recaptcha";
+import { loadReCaptcha } from "react-recaptcha-v3";
 import {
   Container,
   Box,
@@ -103,7 +103,6 @@ function Login() {
   const [showForgotPasswordDialog, setShowForgotPasswordDialog] = useState(false);
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
-  const [recaptchaToken, setRecaptchaToken] = useState("");
   const navigate = useNavigate();
   const signIn = useSignIn();
   const api = useApi();
@@ -113,6 +112,12 @@ function Login() {
   const registrationSuccess = location.state?.registrationSuccess;
   const passwordResetSuccess = location.state?.passwordResetSuccess;
   const sessionExpired = location.state?.sessionExpired;
+
+  useEffect(() => {
+    // Initialize reCAPTCHA v3
+    loadReCaptcha(process.env.REACT_APP_RECAPTCHA_SITE_KEY);
+    console.log(process.env.REACT_APP_RECAPTCHA_SITE_KEY);
+  }, []);
 
   const formik = useFormik({
     initialValues: {
@@ -124,19 +129,13 @@ function Login() {
       password: Yup.string().required('Password is required')
     }),
     onSubmit: async (values) => {
-      if (!recaptchaToken) {
-        setError("Please complete the reCAPTCHA verification");
-        return;
-      }
-
       setError("");
       setLoading(true);
 
       try {
         const response = await api.post("/auth/login", {
-          email: values.email,
-          password: values.password,
-          recaptchaToken
+          ...values,
+          recaptchaToken: await window.grecaptcha.execute(process.env.REACT_APP_RECAPTCHA_SITE_KEY, { action: 'login' })
         });
         
         signIn({
@@ -154,23 +153,6 @@ function Login() {
       }
     },
   });
-
-  const handleRecaptchaChange = (token) => {
-    setRecaptchaToken(token || "");
-    // Clear error message if it was about reCAPTCHA
-    if (error && error.includes("reCAPTCHA")) {
-      setError("");
-    }
-  };
-
-  const handleRecaptchaExpired = () => {
-    setRecaptchaToken("");
-  };
-
-  // Debug the site key
-  useEffect(() => {
-    console.log('ReCAPTCHA Site Key:', process.env.REACT_APP_RECAPTCHA_SITE_KEY);
-  }, []);
 
   return (
     <PageContainer maxWidth="lg">
@@ -237,20 +219,10 @@ function Login() {
             disabled={loading}
           />
           
-          {/* Add reCAPTCHA */}
-          <Box display="flex" justifyContent="center" sx={{ my: 2 }}>
-            <ReCAPTCHA
-              sitekey={process.env.REACT_APP_RECAPTCHA_SITE_KEY}
-              onChange={handleRecaptchaChange}
-              onExpired={handleRecaptchaExpired}
-              theme="dark"
-            />
-          </Box>
-          
           <GradientButton
             type="submit"
             fullWidth
-            disabled={loading || formik.isSubmitting || !recaptchaToken}
+            disabled={loading || formik.isSubmitting}
           >
             {loading ? <CircularProgress size={24} color="inherit" /> : 'Sign In'}
           </GradientButton>
