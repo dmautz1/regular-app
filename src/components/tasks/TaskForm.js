@@ -32,6 +32,7 @@ const TaskForm = ({
     title: '',
     description: '',
     dueDate: format(new Date(defaultDueDate), 'yyyy-MM-dd'),
+    dueTime: null,
     isSticky: false,
     isRecurring: false,
     editRecurrence: false,
@@ -48,15 +49,13 @@ const TaskForm = ({
 
   useEffect(() => {
     if (mode === 'edit' && initialTask) {
-      console.log('Initial task data:', initialTask);
       const isRecurring = initialTask.activity_id && initialTask.activity && initialTask.activity.cron;
       const isPersonalProgram = initialTask.program?.is_personal;
-      console.log('Is recurring:', isRecurring);
-      console.log('Is personal program:', isPersonalProgram);
       setTask({
         title: initialTask.title,
         description: initialTask.description || '',
         dueDate: initialTask.due_date,
+        dueTime: initialTask.due_time ? initialTask.due_time.split(':')[0] + ':' + initialTask.due_time.split(':')[1] : null,
         isSticky: initialTask.is_sticky,
         isRecurring: isRecurring,
         editRecurrence: false,
@@ -69,6 +68,7 @@ const TaskForm = ({
         title: '',
         description: '',
         dueDate: format(new Date(defaultDueDate), 'yyyy-MM-dd'),
+        dueTime: null,
         isSticky: false,
         isRecurring: false,
         editRecurrence: false,
@@ -190,6 +190,18 @@ const TaskForm = ({
           variant="outlined"
           value={task.dueDate}
           onChange={(e) => setTask({...task, dueDate: e.target.value})}
+          InputLabelProps={{ shrink: true }}
+          sx={{ mt: 2 }}
+        />
+        
+        <TextField
+          margin="dense"
+          label="Due Time"
+          type="time"
+          fullWidth
+          variant="outlined"
+          value={task.dueTime}
+          onChange={(e) => setTask({...task, dueTime: e.target.value})}
           InputLabelProps={{ shrink: true }}
           sx={{ mt: 2 }}
         />

@@ -18,8 +18,6 @@ import Redirect from './components/Redirect';
 import ProtectedRoute from "./components/shared/ProtectedRoute";
 import PublicRoute from "./components/shared/PublicRoute";
 import { useIsAuthenticated, useAuthUser } from 'react-auth-kit';
-import { debugAuth } from "./utils/debugAuth";
-import { logEnvironmentVariables } from "./utils/envDebug";
 import { RateLimitProvider } from "./utils/RateLimitContext";
 
 const AppContainer = styled.div`
@@ -30,18 +28,6 @@ const AppContainer = styled.div`
 function App() {
   const isAuthenticated = useIsAuthenticated();
   const auth = useAuthUser();
-  
-  // Log authentication state on app mount
-  useEffect(() => {
-    console.log('App mounted - Authentication check:', { 
-      isAuthenticated: isAuthenticated(), 
-      hasAuth: !!auth()
-    });
-    
-    // Run debug utilities
-    debugAuth();
-    logEnvironmentVariables();
-  }, [isAuthenticated, auth]);
 
   return (
     <RateLimitProvider>

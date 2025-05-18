@@ -116,7 +116,12 @@ function Login() {
   useEffect(() => {
     // Initialize reCAPTCHA v3
     loadReCaptcha(process.env.REACT_APP_RECAPTCHA_SITE_KEY);
-    console.log(process.env.REACT_APP_RECAPTCHA_SITE_KEY);
+    // Set data-page attribute
+    document.body.setAttribute('data-page', 'login');
+    // Cleanup
+    return () => {
+      document.body.removeAttribute('data-page');
+    };
   }, []);
 
   const formik = useFormik({

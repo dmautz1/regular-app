@@ -2,7 +2,6 @@ import React, { useState, useEffect, useRef } from "react";
 import { useAuthUser, useSignOut } from 'react-auth-kit';
 import { useNavigate } from "react-router-dom";
 import { RouterBottomNavigation } from "../navigation/nav";
-import ReCAPTCHA from "react-google-recaptcha";
 import {
   Container,
   Box,
@@ -189,13 +188,6 @@ const VisuallyHiddenInput = styled('input')({
   width: 1,
 });
 
-// New styled component for the reCAPTCHA dialog
-const RecaptchaContainer = styled(Box)(({ theme }) => ({
-  display: 'flex',
-  justifyContent: 'center',
-  margin: '16px 0',
-}));
-
 function Settings() {
   const authUser = useAuthUser();
   const signOut = useSignOut();
@@ -221,10 +213,8 @@ function Settings() {
   });
   const [isLoading, setIsLoading] = useState(true);
 
-  // Add new state variables for the password reset dialog
+  // Remove recaptcha state variables
   const [resetDialogOpen, setResetDialogOpen] = useState(false);
-  const [recaptchaToken, setRecaptchaToken] = useState("");
-  const recaptchaRef = useRef(null);
 
   const [state, setState] = useState({
     currentPassword: '',
@@ -492,39 +482,12 @@ function Settings() {
 
   // Handle dialog open/close
   const handleResetDialogOpen = () => setResetDialogOpen(true);
-  const handleResetDialogClose = () => {
-    setResetDialogOpen(false);
-    setRecaptchaToken("");
-    // Reset reCAPTCHA when dialog closes
-    if (recaptchaRef.current) {
-      recaptchaRef.current.reset();
-    }
-  };
-
-  // Handle reCAPTCHA change
-  const handleRecaptchaChange = (token) => {
-    setRecaptchaToken(token || "");
-  };
-
-  // Handle reCAPTCHA expiry
-  const handleRecaptchaExpired = () => {
-    setRecaptchaToken("");
-  };
+  const handleResetDialogClose = () => setResetDialogOpen(false);
 
   const handleRequestPasswordReset = async () => {
     try {
       setIsLoading(true);
       
-      if (!recaptchaToken) {
-        setSnackbar({
-          open: true,
-          message: 'Please complete the reCAPTCHA verification',
-          severity: 'error'
-        });
-        setIsLoading(false);
-        return;
-      }
-
       // Create a Supabase client using environment variables
       const supabase = createClient(
         process.env.REACT_APP_SUPABASE_URL,
@@ -1055,14 +1018,6 @@ function Settings() {
           <DialogContentText id="reset-dialog-description">
             Enter your email address to receive a password reset link.
           </DialogContentText>
-          <RecaptchaContainer>
-            <ReCAPTCHA
-              ref={recaptchaRef}
-              sitekey={process.env.REACT_APP_RECAPTCHA_SITE_KEY}
-              onChange={handleRecaptchaChange}
-              onExpired={handleRecaptchaExpired}
-            />
-          </RecaptchaContainer>
         </DialogContent>
         <DialogActions>
           <Button onClick={handleResetDialogClose} color="primary">
@@ -1070,8 +1025,7 @@ function Settings() {
           </Button>
           <Button 
             onClick={handleRequestPasswordReset} 
-            color="primary" 
-            disabled={!recaptchaToken}
+            color="primary"
           >
             Send Reset Link
           </Button>

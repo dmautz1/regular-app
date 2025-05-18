@@ -27,6 +27,7 @@ const ActivityForm = ({
     title: '',
     description: '',
     cron: '',
+    dueTime: '',
     recurringDays: {
       0: false, // Sunday
       1: false, // Monday
@@ -40,10 +41,13 @@ const ActivityForm = ({
 
   useEffect(() => {
     if (mode === 'edit' && initialActivity) {
+      const cronParts = initialActivity.cron ? initialActivity.cron.split(' ') : [];
+      const time = cronParts.length >= 2 ? `${cronParts[1]}:${cronParts[0]}` : '';
       setActivity({
         title: initialActivity.title,
         description: initialActivity.description || '',
         cron: initialActivity.cron || '',
+        dueTime: time,
         recurringDays: parseCronToDays(initialActivity.cron)
       });
     } else if (mode === 'add') {
@@ -51,6 +55,7 @@ const ActivityForm = ({
         title: '',
         description: '',
         cron: '',
+        dueTime: '',
         recurringDays: {
           0: false, 1: false, 2: false, 3: false, 4: false, 5: false, 6: false
         }
@@ -97,8 +102,13 @@ const ActivityForm = ({
       return;
     }
 
-    // Create cron expression
-    const cronExpression = `0 9 * * ${selectedDays.join(',')}`; // 9 AM on selected days
+    if (!activity.dueTime) {
+      return;
+    }
+
+    // Create cron expression using the selected time
+    const [hours, minutes] = activity.dueTime.split(':');
+    const cronExpression = `${minutes} ${hours} * * ${selectedDays.join(',')}`;
 
     onSubmit({
       ...activity,
@@ -149,6 +159,18 @@ const ActivityForm = ({
           rows={3}
           value={activity.description}
           onChange={(e) => setActivity({...activity, description: e.target.value})} 
+          sx={{ mt: 2 }}
+        />
+
+        <TextField
+          margin="dense"
+          label="Time"
+          type="time"
+          fullWidth
+          variant="outlined"
+          value={activity.dueTime}
+          onChange={(e) => setActivity({...activity, dueTime: e.target.value})}
+          InputLabelProps={{ shrink: true }}
           sx={{ mt: 2 }}
         />
         

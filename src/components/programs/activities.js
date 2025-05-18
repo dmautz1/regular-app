@@ -85,7 +85,6 @@ const ActivitiesForm = () => {
         programId: program.id,
         activities: program.activities
       });
-      console.log(data);
     } catch (err) {
       console.error("Error submitting activities:", err);
     }

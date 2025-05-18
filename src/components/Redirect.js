@@ -14,13 +14,7 @@ const Redirect = () => {
   const api = useApi();
   
   useEffect(() => {
-    const handleRedirect = async () => {
-      // Log authentication state for debugging
-      console.log('Redirect component - Authentication check:', { 
-        isAuthenticated: isAuthenticated(), 
-        hasAuth: !!auth()
-      });
-      
+    const handleRedirect = async () => {      
       // Check both the authentication function and the auth user object
       const userIsAuthenticated = isAuthenticated() && !!auth();
       
@@ -30,7 +24,6 @@ const Redirect = () => {
           // Fetch user settings to get default page
           const settings = await api.get('/settings');
           const defaultPage = settings?.default_page?.toLowerCase() || 'dashboard';
-          console.log('Redirecting to default page:', defaultPage);
           navigate(`/${defaultPage}`);
         } catch (error) {
           console.error('Error fetching settings:', error);
@@ -38,7 +31,6 @@ const Redirect = () => {
           navigate('/dashboard');
         }
       } else {
-        console.log('User is NOT authenticated, redirecting to login');
         // Force navigation by using replace instead of navigate
         navigate('/login', { replace: true });
       }

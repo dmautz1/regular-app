@@ -20,7 +20,6 @@ export const debugAuth = () => {
   
   // Check auth cookie
   const authCookie = getCookie('_auth');
-  console.log('Auth cookie exists:', !!authCookie);
   
   if (authCookie) {
     try {
@@ -32,11 +31,9 @@ export const debugAuth = () => {
       }).join(''));
 
       const payload = JSON.parse(jsonPayload);
-      console.log('Auth token payload:', payload);
       
       // Check if token is expired
       const isExpired = payload.exp * 1000 < Date.now();
-      console.log('Token is expired:', isExpired);
     } catch (e) {
       console.log('Error parsing auth token:', e);
     }

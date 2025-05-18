@@ -15,19 +15,11 @@ function PublicRoute({ children }) {
   const auth = useAuthUser();
   const location = useLocation();
   
-  // Log authentication state for debugging
-  console.log('PublicRoute - Authentication check:', { 
-    path: location.pathname,
-    isAuthenticated: isAuthenticated(), 
-    hasAuth: !!auth()
-  });
-  
   // Check both the isAuthenticated function and the auth user object
   const userIsAuthenticated = isAuthenticated() && !!auth();
   
   // If user is already authenticated, redirect to home
   if (userIsAuthenticated) {
-    console.log('User is already authenticated, redirecting to dashboard from public route');
     // Preserve intended destination if it was passed in state
     const destination = location.state?.from || '/dashboard';
     return <Navigate to={destination} replace />;

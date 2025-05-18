@@ -16,24 +16,15 @@ function ProtectedRoute({ children }) {
   const auth = useAuthUser();
   const location = useLocation();
   
-  // Log authentication state for debugging
-  console.log('ProtectedRoute - Authentication check:', { 
-    path: location.pathname,
-    isAuthenticated: isAuthenticated(), 
-    hasAuth: !!auth()
-  });
-  
   // Check both the isAuthenticated function and the auth user object
   const userIsAuthenticated = isAuthenticated() && !!auth();
   
   // If not authenticated, redirect to login with the current location
   if (!userIsAuthenticated) {
-    console.log('User is NOT authenticated, redirecting to login from protected route');
     return <Navigate to="/login" state={{ from: location.pathname }} replace />;
   }
   
   // If authenticated, render the children wrapped in the AuthHandler
-  console.log('User is authenticated, rendering protected content');
   return <AuthHandler>{children}</AuthHandler>;
 }
 

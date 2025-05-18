@@ -20,7 +20,6 @@ export const useAuthHandler = () => {
       const userIsAuthenticated = isAuthenticated() && !!auth();
       
       if (!userIsAuthenticated) {
-        console.log('Session expired or invalid');
         signOut();
         navigate('/login', { state: { expired: true }, replace: true });
       }

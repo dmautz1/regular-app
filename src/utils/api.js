@@ -60,7 +60,6 @@ export const useApi = () => {
   const handleError = useCallback((response) => {
     if (response.status === 401) {
       // Unauthorized: token expired or invalid
-      console.log('Session expired. Redirecting to login.');
       signOut();
       navigate('/login', { state: { sessionExpired: true } });
       throw new Error('Your session has expired. Please log in again.');
@@ -68,7 +67,6 @@ export const useApi = () => {
     
     if (response.status === 429) {
       // Rate limit exceeded
-      console.log('Rate limit exceeded');
       setRateLimitExceeded(true);
       throw new Error('Rate limit exceeded. Please try again later.');
     }

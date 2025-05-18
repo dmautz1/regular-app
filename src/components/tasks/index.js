@@ -162,7 +162,6 @@ const EmptyState = styled(Box)(({ theme }) => ({
 
 function Tasks() {
   const authUser = useAuthUser();
-  console.log(authUser());
   const api = useApi();
   
   const [day, setDay] = useState(new Date().toLocaleDateString().replace(/\//g, '-'));
@@ -197,6 +196,7 @@ function Tasks() {
     title: '',
     description: '',
     dueDate: '',
+    dueTime: '',
     isSticky: false,
     isRecurring: false,
     recurringDays: {
@@ -254,22 +254,22 @@ function Tasks() {
 
   const fetchTasks = async (date) => {
     try {
-      console.log(`Fetching tasks for date: ${date}`);
       const data = await api.get(`/tasks?day=${date}`);
-      console.log(`Received ${data ? data.length : 0} tasks from API:`, data);
       
       if (Array.isArray(data)) {
-        // Sort tasks: sticky tasks first, then by time, then by creation date
+        // Sort tasks: time first, then non-sticky non-recurring, then sticky, then recurring last
         const sortedTasks = [...data].sort((a, b) => {
-          // First sort by sticky status
-          if (a.is_sticky && !b.is_sticky) return -1;
-          if (!a.is_sticky && b.is_sticky) return 1;
-          
-          // If both are sticky or both are not sticky, sort by time
+          // First sort by time
           const getTimeValue = (task) => {
-            if (!task.activity?.cron) return 999999; // Put tasks without time at the end
-            const [minute, hour] = task.activity.cron.split(' ').slice(0, 2).map(Number);
-            return hour * 60 + minute; // Convert to minutes for easier comparison
+            if (task.due_time) {
+              const [hours, minutes] = task.due_time.split(':').map(Number);
+              return hours * 60 + minutes;
+            }
+            if (task.activity?.cron) {
+              const [minute, hour] = task.activity.cron.split(' ').slice(0, 2).map(Number);
+              return hour * 60 + minute;
+            }
+            return 999999; // Put tasks without time at the end
           };
           
           const timeA = getTimeValue(a);
@@ -277,7 +277,19 @@ function Tasks() {
           
           if (timeA !== timeB) return timeA - timeB;
           
-          // If times are the same, sort by creation date
+          // If times are the same, sort by task type
+          const getTaskTypeValue = (task) => {
+            if (task.activity_id) return 3; // Recurring tasks last
+            if (task.is_sticky) return 2; // Sticky tasks second to last
+            return 1; // Regular tasks first
+          };
+          
+          const typeA = getTaskTypeValue(a);
+          const typeB = getTaskTypeValue(b);
+          
+          if (typeA !== typeB) return typeA - typeB;
+          
+          // If types are the same, sort by creation date
           return new Date(a.created_at) - new Date(b.created_at);
         });
         setTasks(sortedTasks);
@@ -305,19 +317,15 @@ function Tasks() {
       const dayDate = new Date(day);
       dayDate.setHours(0, 0, 0, 0);
       
-      if (dayDate >= today) {
-        console.log(`Populating tasks for date: ${day}`);
-        
+      if (dayDate >= today) {        
         const result = await api.post(`/tasks/populate`, { 
-          day: day 
+          day: day                                                                                                                                                                                                                                  
         });
-        console.log(`Population result:`, result);
       }
       
       // After populating tasks, fetch them again
       await fetchTasks(day);
     } catch (err) {
-      console.error("Error populating tasks:", err);
       setSnackbar({
         open: true,
         message: `Error populating tasks: ${err.message}`,
@@ -341,7 +349,6 @@ function Tasks() {
         return task;
       }));
     } catch (err) {
-      console.error("Error completing task:", err);
       setSnackbar({
         open: true,
         message: `Error completing task: ${err.message}`,
@@ -363,9 +370,7 @@ function Tasks() {
         message: "Task deleted successfully",
         severity: "success"
       });
-    } catch (err) {
-      console.error("Error deleting task:", err);
-      
+    } catch (err) {   
       setSnackbar({
         open: true,
         message: `Error deleting task: ${err.message}`,
@@ -421,6 +426,7 @@ function Tasks() {
         await api.post("/tasks/new", {
           title: taskData.title,
           dueDate: day,
+          dueTime: taskData.dueTime,
           isRecurring: true,
           recurringDays: selectedDays
         });
@@ -436,6 +442,7 @@ function Tasks() {
           title: taskData.title,
           description: taskData.description,
           dueDate: day,
+          dueTime: taskData.dueTime,
           isSticky: taskData.isSticky
         });
         
@@ -466,6 +473,7 @@ function Tasks() {
         title: taskData.title,
         description: taskData.description,
         dueDate: taskData.dueDate,
+        dueTime: taskData.dueTime,
         isSticky: taskData.isSticky
       };
 
@@ -537,19 +545,22 @@ function Tasks() {
   const handleMenuClick = (event, task) => {
     setAnchorEl(event.currentTarget);
     setSelectedTask(task);
-    console.log(selectedTask);
   };
 
   const handleMenuClose = () => {
     setAnchorEl(null);
   };
 
-  const formatTimeFromCron = (cron) => {
-    if (!cron) return '';
-    const [minute, hour] = cron.split(' ');
-    const date = new Date();
-    date.setHours(parseInt(hour), parseInt(minute));
-    return date.toLocaleTimeString([], { hour: 'numeric', minute: '2-digit' });
+  const formatTime = (time) => {
+    if (time.split(':')[0] === '00') {
+      return '12:' + time.split(':')[1] + ' AM';
+    } else if (time.split(':')[0] === '12') {
+      return '12:' + time.split(':')[1] + ' PM';
+    } else if (time.split(':')[0] > 12) {
+      return time.split(':')[0] - 12 + ':' + time.split(':')[1] + ' PM';
+    } else {
+      return time.split(':')[0] + ':' + time.split(':')[1] + ' AM';
+    }
   };
 
   return (
@@ -647,13 +658,13 @@ function Tasks() {
                             ml: 'auto',
                             minWidth: 'fit-content'
                           }}>
-                            {task.activity?.cron && (
+                            {task.due_time && (
                               <Typography variant="body2" sx={{ 
                                 color: '#A4B1CD',
                                 minWidth: '80px',
                                 textAlign: 'right'
                               }}>
-                                {formatTimeFromCron(task.activity.cron)}
+                                {formatTime(task.due_time)}
                               </Typography>
                             )}
                             <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>

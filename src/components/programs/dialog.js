@@ -18,7 +18,9 @@ import {
   Fade,
   Paper,
   Stack,
-  Skeleton
+  Skeleton,
+  Menu,
+  MenuItem
 } from '@mui/material';
 import { styled } from '@mui/system';
 import LinkIcon from '@mui/icons-material/Link';
@@ -33,6 +35,8 @@ import ScheduleIcon from '@mui/icons-material/Schedule';
 import PeopleIcon from '@mui/icons-material/People';
 import EditIcon from '@mui/icons-material/Edit';
 import AddIcon from '@mui/icons-material/Add';
+import MoreVertIcon from '@mui/icons-material/MoreVert';
+import DeleteIcon from '@mui/icons-material/Delete';
 import cronParser from 'cron-parser';
 import ActivityForm from './ActivityForm';
 
@@ -281,6 +285,8 @@ export default function ProgramDialog({ selectedProgram, isDialogOpened, handleC
   const [isActivityFormOpen, setIsActivityFormOpen] = useState(false);
   const [selectedActivity, setSelectedActivity] = useState(null);
   const [activities, setActivities] = useState([]);
+  const [anchorEl, setAnchorEl] = useState(null);
+  const [selectedActivityForMenu, setSelectedActivityForMenu] = useState(null);
   const authHeader = useAuthHeader();
   const api = useApi();
   
@@ -383,6 +389,9 @@ export default function ProgramDialog({ selectedProgram, isDialogOpened, handleC
 
   const formatTimeFromCron = (cron) => {
     const [minute, hour] = cron.split(' ');
+    if (hour === '*') {
+      return 'Any Time';
+    }
     const date = new Date();
     date.setHours(parseInt(hour), parseInt(minute));
     return date.toLocaleTimeString([], { hour: 'numeric', minute: '2-digit' });
@@ -524,6 +533,37 @@ export default function ProgramDialog({ selectedProgram, isDialogOpened, handleC
       setSelectedActivity(null);
     } catch (error) {
       console.error('Error saving activity:', error);
+    }
+  };
+
+  const handleMenuClick = (event, activity) => {
+    setAnchorEl(event.currentTarget);
+    setSelectedActivityForMenu(activity);
+  };
+
+  const handleMenuClose = () => {
+    setAnchorEl(null);
+    setSelectedActivityForMenu(null);
+  };
+
+  const handleDeleteActivity = async () => {
+    if (!selectedActivityForMenu) return;
+    
+    try {
+      await api.delete(`/activities/${selectedActivityForMenu.id}`);
+      
+      // Reload the program to get fresh data
+      const updatedProgram = await api.get(`/programs/${selectedProgram.id}`);
+      if (updatedProgram) {
+        setActivities(updatedProgram.activities);
+        if (typeof handleCloseDialog === 'function') {
+          handleCloseDialog(false, updatedProgram);
+        }
+      }
+      
+      handleMenuClose();
+    } catch (error) {
+      console.error('Error deleting activity:', error);
     }
   };
 
@@ -707,10 +747,10 @@ export default function ProgramDialog({ selectedProgram, isDialogOpened, handleC
                                   {selectedProgram.is_personal && (
                                     <IconButton 
                                       size="small" 
-                                      onClick={() => handleEditActivity(activity)}
+                                      onClick={(e) => handleMenuClick(e, activity)}
                                       sx={{ color: '#8A4EFC' }}
                                     >
-                                      <EditIcon fontSize="small" />
+                                      <MoreVertIcon fontSize="small" />
                                     </IconButton>
                                   )}
                                 </Box>
@@ -761,6 +801,36 @@ export default function ProgramDialog({ selectedProgram, isDialogOpened, handleC
         initialActivity={selectedActivity}
         mode={selectedActivity ? 'edit' : 'add'}
       />
+
+      <Menu
+        anchorEl={anchorEl}
+        open={Boolean(anchorEl)}
+        onClose={handleMenuClose}
+        PaperProps={{
+          sx: {
+            bgcolor: '#202B3E',
+            borderRadius: '8px',
+            '& .MuiMenuItem-root': {
+              color: '#EEE',
+              '&:hover': {
+                bgcolor: 'rgba(138, 78, 252, 0.1)'
+              }
+            }
+          }
+        }}
+      >
+        <MenuItem onClick={() => {
+          handleEditActivity(selectedActivityForMenu);
+          handleMenuClose();
+        }}>
+          <EditIcon fontSize="small" sx={{ mr: 1 }} />
+          Edit
+        </MenuItem>
+        <MenuItem onClick={handleDeleteActivity}>
+          <DeleteIcon fontSize="small" sx={{ mr: 1 }} />
+          Delete
+        </MenuItem>
+      </Menu>
     </StyledDialog>
   );
 }

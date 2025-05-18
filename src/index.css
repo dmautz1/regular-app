@@ -369,3 +369,14 @@ button.MuiIconButton-root:focus-visible {
 /* .MuiContainer-root {
   padding-bottom: 104px !important;
 } */
+
+/* Hide reCAPTCHA badge by default */
+.grecaptcha-badge {
+  visibility: hidden !important;
+}
+
+/* Show reCAPTCHA badge only on login and signup pages */
+body[data-page="login"] .grecaptcha-badge,
+body[data-page="signup"] .grecaptcha-badge {
+  visibility: visible !important;
+}
