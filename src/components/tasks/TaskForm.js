@@ -134,6 +134,22 @@ const TaskForm = ({
       ...task,
       isEditingRecurrence: mode === 'edit' && task.editRecurrence
     });
+
+    // Reset form state after successful submission
+    if (mode === 'add') {
+      setTask({
+        title: '',
+        description: '',
+        dueDate: format(new Date(defaultDueDate), 'yyyy-MM-dd'),
+        dueTime: null,
+        isSticky: false,
+        isRecurring: false,
+        editRecurrence: false,
+        recurringDays: {
+          0: false, 1: false, 2: false, 3: false, 4: false, 5: false, 6: false
+        }
+      });
+    }
   };
 
   return (

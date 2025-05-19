@@ -140,7 +140,7 @@ const ProgramsCards = ({ programs, selectedProgram, handleSelectProgram, subscri
     return { 
       src: avatarSrc, 
       initials, 
-      color: getAvatarColor(creator.first_name || creator.email || 'User')
+      color: avatarSrc ? 'transparent' : getAvatarColor(creator.first_name || creator.email || 'User')
     };
   };
   

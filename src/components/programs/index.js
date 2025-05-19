@@ -206,7 +206,7 @@ function Programs() {
         setFeedPrograms(programs);
         // Extract unique categories from programs
         const uniqueCategories = [...new Set(programs.map(program => program.category).filter(Boolean))];
-        setCategories(uniqueCategories);
+        setCategories(uniqueCategories.sort());
       })
       .catch((err) => {
         console.log("Error: ", err);

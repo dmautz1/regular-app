@@ -453,7 +453,7 @@ export default function ProgramDialog({ selectedProgram, isDialogOpened, handleC
     return { 
       src: avatarSrc, 
       initials, 
-      color: getAvatarColor(creator.first_name || creator.email || 'User')
+      color: avatarSrc ? 'transparent' : getAvatarColor(creator.first_name || creator.email || 'User')
     };
   };
 
@@ -529,6 +529,8 @@ export default function ProgramDialog({ selectedProgram, isDialogOpened, handleC
         }
       }
 
+      // Keep the schedule tab open
+      setTabValue(1);
       setIsActivityFormOpen(false);
       setSelectedActivity(null);
     } catch (error) {
